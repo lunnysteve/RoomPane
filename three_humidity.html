@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Humidity (three.js)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="three_common.css" />
+</head>
+<body>
+  <canvas id="gl"></canvas>
+  <div class="stage split">
+    <div class="panel">
+      <div class="big" id="hum">--<span class="unit">%</span></div>
+      <div class="label">Humidity</div>
+      <div class="sub" id="word">&nbsp;</div>
+      <div class="chips">
+        <div class="chip"><b id="dew">--°</b><span>Dew point</span></div>
+        <div class="chip"><b id="temp">--°</b><span>Temperature</span></div>
+        <div class="chip"><b id="pressure">----</b><span>Pressure hPa</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const $ = (id) => document.getElementById(id);
+    const state = { w: null };
+    let lib = null;
+    try { lib = await import('./three_lib.js'); } catch (e) { console.warn('three.js unavailable, text only', e); }
+
+    async function refresh() {
+      if (!lib) return;
+      try {
+        const w = await lib.fetchWeatherData(); state.w = w;
+        $('word').textContent = lib.humWord(w.hum); $('dew').textContent = `${w.dew}°`; $('temp').textContent = `${w.temp}°`; $('pressure').textContent = w.pressure;
+      } catch (e) { if (!state.w) $('word').textContent = 'Weather unavailable'; }
+    }
+    refresh(); setInterval(refresh, 5 * 60 * 1000);
+
+    if (lib) {
+      const { createStage, makeDroplet } = lib, stage = createStage($('gl')), drop = makeDroplet();
+      stage.add(drop.group);
+      let spot = { x: 0, y: 0, s: 0.9 }, lastHum = null;
+      stage.onResize(({ a, portrait }) => {
+        spot = portrait ? { x: 0, y: 0.5, s: Math.min(a * 0.62, 0.42) } : { x: -a * 0.5, y: -0.02, s: Math.min(0.92, a * 0.43) }; // droplet is ~2.1 tall at s=1
+      });
+      stage.start((t, dt) => {
+        stage.setKind(state.w ? state.w.kind : 'cloudy');
+        drop.update(t, dt, state.w ? state.w.hum : 0); stage.place(drop.group, spot.x, spot.y, spot.s);
+        const shown = Math.round(drop.shown);
+        if (state.w && shown !== lastHum) { lastHum = shown; $('hum').innerHTML = `${shown}<span class="unit">%</span>`; }
+      });
+    }
+  </script>
+</body>
+</html>

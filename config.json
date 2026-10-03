@@ -10,7 +10,7 @@
       "name": "all things",
       "url": "weather-clock.html",
       "time": 30,
-      "active": true,
+      "active": false,
       "schedule": {
         "enabled": false
       }
@@ -19,6 +19,46 @@
       "id": "p_three_display",
       "name": "Time Weather Humidity (3D)",
       "url": "three_display.html",
+      "time": 30,
+      "active": true,
+      "schedule": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "p_three_time",
+      "name": "Time (3D)",
+      "url": "three_time.html",
+      "time": 30,
+      "active": true,
+      "schedule": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "p_three_weather",
+      "name": "Weather (3D)",
+      "url": "three_weather.html",
+      "time": 30,
+      "active": true,
+      "schedule": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "p_three_humidity",
+      "name": "Humidity (3D)",
+      "url": "three_humidity.html",
+      "time": 30,
+      "active": true,
+      "schedule": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "p_three_sky",
+      "name": "Sky Tonight (3D)",
+      "url": "three_sky.html",
       "time": 30,
       "active": true,
       "schedule": {

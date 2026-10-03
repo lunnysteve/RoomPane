@@ -6,47 +6,17 @@
   <title>Time / Weather / Humidity (three.js)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="three_common.css" />
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      width: 100vw; height: 100vh; overflow: hidden;
-      background: #0f172a; /* shown until WebGL is ready, or if it never is */
-      color: #fff; font-family: 'Inter', sans-serif;
-    }
-    canvas#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-
-    /* three equal cells; the three.js scene draws the icon in the top half of each, text sits below */
-    .stage {
-      position: fixed; inset: 0; z-index: 1; pointer-events: none;
-      display: grid; grid-template-columns: repeat(3, 1fr);
-    }
-    .cell {
-      display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
-      padding-bottom: 7vh; text-align: center;
-      text-shadow: 0 4px 30px rgba(0, 0, 0, 0.35);
-      animation: rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-    .cell:nth-child(2) { animation-delay: 0.12s; }
-    .cell:nth-child(3) { animation-delay: 0.24s; }
-    @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
-
-    .big {
-      font-size: min(10.4vw, 19vh); font-weight: 900; line-height: 0.95; letter-spacing: -0.04em;
-      font-variant-numeric: tabular-nums; white-space: nowrap;
-    }
-    .big .unit { font-size: 0.42em; font-weight: 700; color: rgba(255, 255, 255, 0.5); margin-left: 0.04em; vertical-align: top; position: relative; top: 0.12em; }
-    .colon { animation: blink 1s ease-in-out infinite; }
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
-    .label {
-      margin-top: 1.4vh; font-size: min(2.4vw, 4.4vh); font-weight: 700;
-      letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.55);
-    }
-    .sub { margin-top: 0.8vh; font-size: min(1.9vw, 3.4vh); font-weight: 500; color: rgba(255, 255, 255, 0.4); }
-
-    @media (max-aspect-ratio: 11/10) { /* portrait: stack the three cells */
+    /* three equal cells; the scene draws each icon in the upper part, text fills the rest */
+    .stage { grid-template-columns: repeat(3, 1fr); }
+    .cell { justify-content: flex-end; padding-bottom: 5vh; }
+    .big { font-size: min(10.8vw, 21vh); }
+    .label { margin-top: 1.4vh; font-size: min(2.4vw, 4.6vh); }
+    .sub { margin-top: 0.8vh; font-size: min(1.9vw, 3.6vh); }
+    @media (max-aspect-ratio: 11/10) { /* portrait: icon left, text right, three rows */
       .stage { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
-      /* icon is drawn on the left of each row by the scene, text goes in the right half */
       .cell { padding: 0 3vw 0 46%; justify-content: center; }
       .big { font-size: min(14vw, 6.5vh); }
       .label { font-size: min(3.4vw, 1.9vh); margin-top: 0.6vh; }
@@ -74,370 +44,57 @@
   </div>
 
   <script type="module">
-    const LAT = 51.4185, LON = -0.9530, TZ = 'Europe/London';
-    const REFRESH_MS = 5 * 60 * 1000;
     const $ = (id) => document.getElementById(id);
-    const q = new URLSearchParams(location.search);
+    const state = { w: null };
+    let lib = null;
+    try { lib = await import('./three_lib.js'); } catch (e) { console.warn('three.js unavailable, text only', e); }
+    // text layer needs the clock/weather helpers even if WebGL failed, so they are re-read from the lib when present
+    const londonNow = lib ? lib.londonNow : () => { const d = new Date(); return { h: d.getHours(), m: d.getMinutes(), s: d.getSeconds(), ms: d.getMilliseconds() }; };
+    const dateText = lib ? lib.dateText : () => new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    const humWord = lib ? lib.humWord : (h) => (h < 30 ? 'Dry' : h < 60 ? 'Comfortable' : h < 75 ? 'Humid' : 'Very humid');
 
-    // ---------- state shared by the text layer and the scene ----------
-    const state = { kind: 'cloudy', label: 'Loading', temp: null, feels: null, hum: null, humShown: 0, kindChangedAt: 0 };
-
-    // ---------- time (Europe/London, independent of the Pi's own timezone) ----------
-    const clockFmt = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    const dateFmt = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' });
-    function londonNow() {
-      const p = Object.fromEntries(clockFmt.formatToParts(new Date()).map((x) => [x.type, x.value]));
-      return { h: +p.hour % 24, m: +p.minute, s: +p.second, ms: Date.now() % 1000 };
+    let lastTime = '', lastDate = '', lastHum = null;
+    function clockText() {
+      const t = londonNow(), hh = String(t.h).padStart(2, '0'), mm = String(t.m).padStart(2, '0');
+      if (hh + mm !== lastTime) { lastTime = hh + mm; $('time').innerHTML = `${hh}<span class="colon">:</span>${mm}`; }
+      const d = dateText(); if (d !== lastDate) { lastDate = d; $('date').textContent = d; }
     }
-    let lastTimeText = '', lastDateText = '';
-    function updateClockText() {
-      const t = londonNow();
-      const hh = String(t.h).padStart(2, '0'), mm = String(t.m).padStart(2, '0');
-      if (hh + mm !== lastTimeText) { lastTimeText = hh + mm; $('time').innerHTML = `${hh}<span class="colon">:</span>${mm}`; }
-      const d = dateFmt.format(new Date());
-      if (d !== lastDateText) { lastDateText = d; $('date').textContent = d; }
-    }
-
-    // ---------- weather ----------
-    // kind drives the 3D icon and the background; matches the groups used by large_weather.html
-    function describe(code, isDay) {
-      const day = (a, b) => (isDay ? a : b);
-      const m = {
-        0: ['Clear', day('clear', 'clear-night')],
-        1: ['Mainly Clear', day('partly-cloudy', 'partly-cloudy-night')],
-        2: ['Partly Cloudy', day('partly-cloudy', 'partly-cloudy-night')],
-        3: ['Overcast', 'cloudy'],
-        45: ['Foggy', 'fog'], 48: ['Icy Fog', 'fog'],
-        51: ['Drizzle', 'rain'], 53: ['Drizzle', 'rain'], 55: ['Drizzle', 'rain'],
-        61: ['Light Rain', 'rain'], 63: ['Rain', 'rain'], 65: ['Heavy Rain', 'rain'],
-        71: ['Light Snow', 'snow'], 73: ['Snow', 'snow'], 75: ['Heavy Snow', 'snow'], 77: ['Snow', 'snow'],
-        80: ['Showers', 'rain'], 81: ['Showers', 'rain'], 82: ['Heavy Showers', 'rain'],
-        85: ['Snow Showers', 'snow'], 86: ['Heavy Snow', 'snow'],
-        95: ['Thunder', 'thunder'], 96: ['Thunder', 'thunder'], 99: ['Thunder', 'thunder'],
-      };
-      const r = m[code] || ['Cloudy', 'cloudy'];
-      return { label: r[0], kind: r[1] };
-    }
-    const humWord = (h) => (h < 30 ? 'Dry' : h < 60 ? 'Comfortable' : h < 75 ? 'Humid' : 'Very humid');
-
-    async function fetchWeather() {
+    async function refresh() {
+      if (!lib) return;
       try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
-          `&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day&timezone=${encodeURIComponent(TZ)}`;
-        const c = (await (await fetch(url)).json()).current;
-        const info = describe(c.weather_code, c.is_day === 1);
-        if (q.get('kind')) { info.kind = q.get('kind'); info.label = info.kind.replace(/-/g, ' '); } // preview: ?kind=thunder
-        if (q.get('hum')) c.relative_humidity_2m = +q.get('hum'); // preview: ?hum=45
-        if (info.kind !== state.kind) state.kindChangedAt = performance.now();
-        state.kind = info.kind; state.label = info.label;
-        state.temp = Math.round(c.temperature_2m);
-        state.feels = Math.round(c.apparent_temperature);
-        state.hum = Math.round(c.relative_humidity_2m);
-        $('temp').innerHTML = `${state.temp}<span class="unit">°C</span>`;
-        $('condition').textContent = info.label;
-        $('feels').textContent = `Feels like ${state.feels}°`;
-        $('humWord').textContent = humWord(state.hum);
-      } catch (e) {
-        if (state.temp === null) $('condition').textContent = 'Weather unavailable';
-      }
+        const w = await lib.fetchWeatherData(); state.w = w;
+        $('temp').innerHTML = `${w.temp}<span class="unit">°C</span>`;
+        $('condition').textContent = w.label; $('feels').textContent = `Feels like ${w.feels}°`; $('humWord').textContent = humWord(w.hum);
+      } catch (e) { if (!state.w) $('condition').textContent = 'Weather unavailable'; }
     }
 
-    // ---------- three.js scene (loaded from a CDN like the other pages' libraries) ----------
-    let THREE = null, renderer = null;
-    try {
-      THREE = await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js');
-      renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: true, alpha: false, powerPreference: 'low-power' });
-    } catch (e) {
-      console.warn('three.js unavailable, showing text only', e);
-    }
-
-    const sceneApi = renderer ? buildScene() : null;
-
-    function buildScene() {
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-      const scene = new THREE.Scene();
-      const camera = new THREE.OrthographicCamera(-1.78, 1.78, 1, -1, -10, 10);
-      camera.position.z = 5;
-      const dpr = renderer.getPixelRatio();
-
-      // shared geometry (never disposed) and a helper for flat, unlit, depth-sorted-by-z shapes
-      const CIRCLE = new THREE.CircleGeometry(1, 40);
-      const PLANE = new THREE.PlaneGeometry(1, 1);
-      const flat = (geo, color, opacity = 1, z = 0) => {
-        const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthTest: false, depthWrite: false }));
-        m.position.z = z; return m;
-      };
-      const disc = (r, color, opacity, z) => { const m = flat(CIRCLE, color, opacity, z); m.scale.set(r, r, 1); return m; };
-      const bar = (w, h, color, opacity, z) => { const m = flat(PLANE, color, opacity, z); m.scale.set(w, h, 1); return m; };
-      const soft = (() => { // round, soft-edged sprite for snow and stars
-        const c = document.createElement('canvas'); c.width = c.height = 32;
-        const g = c.getContext('2d'), grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
-        grad.addColorStop(0, 'rgba(255,255,255,1)'); grad.addColorStop(0.5, 'rgba(255,255,255,0.8)'); grad.addColorStop(1, 'rgba(255,255,255,0)');
-        g.fillStyle = grad; g.fillRect(0, 0, 32, 32); return new THREE.CanvasTexture(c);
-      })();
-
-      // ---- background gradient, eased between weather palettes ----
-      const PALETTE = {
-        clear: ['#2a5d93', '#0f2540'], 'clear-night': ['#0b132b', '#010409'],
-        'partly-cloudy': ['#2c4a6b', '#101c30'], 'partly-cloudy-night': ['#0f172a', '#020617'],
-        cloudy: ['#334155', '#0f172a'], fog: ['#475569', '#1e293b'], rain: ['#1e293b', '#020617'],
-        snow: ['#3b4a63', '#1a2335'], thunder: ['#0f1424', '#020408'],
-      };
-      const bgTop = new THREE.Color(PALETTE.cloudy[0]), bgBot = new THREE.Color(PALETTE.cloudy[1]);
-      const bgMat = new THREE.ShaderMaterial({
-        depthTest: false, depthWrite: false,
-        uniforms: { uTop: { value: bgTop }, uBot: { value: bgBot }, uFlash: { value: 0 } },
-        vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
-        fragmentShader: `uniform vec3 uTop; uniform vec3 uBot; uniform float uFlash; varying vec2 vUv;
-          void main(){ vec3 c = mix(uBot, uTop, vUv.y); c *= 1.0 - distance(vUv, vec2(0.5)) * 0.4; c += uFlash * 0.22; gl_FragColor = vec4(c, 1.0); }`,
-      });
-      const bg = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), bgMat);
-      bg.frustumCulled = false; bg.renderOrder = -10; scene.add(bg);
-
-      // ---- full-screen weather particles: rain streaks, snow, stars ----
-      const rand = (a, b) => a + Math.random() * (b - a);
-      const RAIN_N = 200;
-      const rainPos = new Float32Array(RAIN_N * 6), rainDrops = Array.from({ length: RAIN_N }, () => ({ x: rand(-2.2, 2.2), y: rand(-1.1, 1.1), v: rand(1.5, 2.6), l: rand(0.06, 0.13) }));
-      const rainGeo = new THREE.BufferGeometry(); rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
-      const rain = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({ color: 0x7db7ff, transparent: true, opacity: 0.32, depthTest: false, depthWrite: false }));
-      rain.frustumCulled = false; rain.renderOrder = -5; scene.add(rain);
-
-      const SNOW_N = 130;
-      const snowPos = new Float32Array(SNOW_N * 3), flakes = Array.from({ length: SNOW_N }, () => ({ x: rand(-2.2, 2.2), y: rand(-1.1, 1.1), v: rand(0.12, 0.3), ph: rand(0, 6.28), a: rand(0.04, 0.12) }));
-      const snowGeo = new THREE.BufferGeometry(); snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
-      const snow = new THREE.Points(snowGeo, new THREE.PointsMaterial({ map: soft, size: 6 * dpr, sizeAttenuation: false, transparent: true, opacity: 0.85, depthTest: false, depthWrite: false }));
-      snow.frustumCulled = false; snow.renderOrder = -5; scene.add(snow);
-
-      const STAR_N = 90, starA = new Float32Array(STAR_N * 3), starB = new Float32Array(STAR_N * 3);
-      for (let i = 0; i < STAR_N; i++) { (i % 2 ? starA : starB).set([rand(-2.2, 2.2), rand(-1, 1), 0], Math.floor(i / 2) * 3); }
-      const mkStars = (arr, size) => {
-        const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
-        const p = new THREE.Points(geo, new THREE.PointsMaterial({ map: soft, size: size * dpr, sizeAttenuation: false, transparent: true, opacity: 0.8, depthTest: false, depthWrite: false }));
-        p.frustumCulled = false; p.renderOrder = -5; scene.add(p); return p;
-      };
-      const starsA = mkStars(starA, 4), starsB = mkStars(starB, 3);
-
-      // ---- weather icon pieces (all designed to fit in a ~1 unit radius) ----
-      const glow = (r, color, opacity, z) => { // soft radial glow (a flat disc looks like a hard grey circle)
-        const m = new THREE.Mesh(PLANE, new THREE.MeshBasicMaterial({ map: soft, color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false }));
-        m.scale.set(r * 2, r * 2, 1); m.position.z = z; m.userData.r = r; return m;
-      };
-      const cloud = (color) => {
-        const g = new THREE.Group();
-        [[-0.38, -0.08, 0.26], [-0.12, 0.1, 0.34], [0.2, 0.06, 0.3], [0.44, -0.08, 0.22], [0, -0.1, 0.3],
-         [-0.27, -0.19, 0.15], [0.33, -0.19, 0.15]].forEach(([x, y, r]) => { // last two round off the bottom corners
-          const c = disc(r, color, 1, 0.01); c.position.set(x, y, 0.01); g.add(c);
-        });
-        const base = bar(0.6, 0.3, color, 1, 0.01); base.position.set(0.03, -0.19, 0.01); g.add(base);
-        return g;
-      };
-      const sun = () => {
-        const g = new THREE.Group(), rays = new THREE.Group();
-        const glowA = glow(0.8, 0xffc93c, 0.7, 0), glowB = glow(1.15, 0xffb020, 0.3, -0.01);
-        g.add(glowB, glowA, disc(0.38, 0xffc93c, 1, 0.02));
-        for (let i = 0; i < 12; i++) {
-          const a = (i * Math.PI) / 6, r = bar(0.07, 0.2, 0xffc93c, 0.95, 0.02);
-          r.position.set(Math.cos(a) * 0.68, Math.sin(a) * 0.68, 0); r.rotation.z = a - Math.PI / 2; rays.add(r);
-        }
-        g.add(rays);
-        return { g, update: (t) => { rays.rotation.z = t * 0.25; const p = 1 + Math.sin(t * 1.6) * 0.06; glowA.scale.set(1.6 * p, 1.6 * p, 1); glowB.scale.set(2.3 * p, 2.3 * p, 1); } };
-      };
-      let crescentGeo = null;
-      const moon = () => {
-        if (!crescentGeo) { // outer disc minus an offset disc, built from the two arcs
-          const R = 0.5, r = 0.42, dx = 0.2, dy = 0.14, d = Math.hypot(dx, dy), phi = Math.atan2(dy, dx);
-          const a = (R * R - r * r + d * d) / (2 * d), delta = Math.acos(a / R), eps = Math.acos((d - a) / r), psi = phi + Math.PI;
-          const outer = [], inner = [];
-          for (let i = 0; i <= 48; i++) { const t = phi + delta + ((2 * Math.PI - 2 * delta) * i) / 48; outer.push([R * Math.cos(t), R * Math.sin(t)]); }
-          for (let i = 0; i <= 48; i++) { const t = psi - eps + ((2 * eps) * i) / 48; inner.push([dx + r * Math.cos(t), dy + r * Math.sin(t)]); }
-          const last = outer[outer.length - 1];
-          if (Math.hypot(inner[0][0] - last[0], inner[0][1] - last[1]) > Math.hypot(inner[48][0] - last[0], inner[48][1] - last[1])) inner.reverse();
-          const s = new THREE.Shape(); s.moveTo(...outer[0]); outer.slice(1).concat(inner).forEach((p) => s.lineTo(...p));
-          crescentGeo = new THREE.ShapeGeometry(s);
-        }
-        const g = new THREE.Group(), halo = glow(1.0, 0xa9c0ee, 0.45, -0.01);
-        const m = flat(crescentGeo, 0xe6ecf8, 1, 0.02); m.rotation.z = 0.35;
-        g.add(halo, m);
-        const sparks = [[0.62, 0.5, 0.035], [0.78, 0.05, 0.025], [0.4, 0.78, 0.022], [-0.7, 0.6, 0.03]].map(([x, y, r], i) => { const s = disc(r, 0xffffff, 0.9, 0.02); s.position.set(x, y, 0.02); s.userData.i = i; g.add(s); return s; });
-        return { g, update: (t) => { halo.scale.setScalar(2 + Math.sin(t * 1.2) * 0.08); sparks.forEach((s) => { s.material.opacity = 0.35 + 0.65 * Math.abs(Math.sin(t * 1.7 + s.userData.i * 1.9)); }); } };
-      };
-      const fall = (n, mk, fn) => { // n particles falling under a cloud, wrapped between y=-0.2 and y=-1
-        const g = new THREE.Group(), items = [];
-        for (let i = 0; i < n; i++) { const m = mk(); const it = { m, x: rand(-0.45, 0.45), y: rand(-1, -0.2), v: rand(0.5, 0.9), ph: rand(0, 6.28) }; items.push(it); g.add(m); }
-        return { g, update: (t, dt) => items.forEach((it) => { it.y -= it.v * dt * fn.speed; if (it.y < -1) { it.y = -0.2; it.x = rand(-0.45, 0.45); } fn.place(it, t); }) };
-      };
-      const rainFall = (n) => fall(n, () => bar(0.022, 0.15, 0x60a5fa, 0.9, 0.0), { speed: 1.9, place: (it) => { it.m.position.set(it.x + (it.y + 0.2) * 0.1, it.y, 0); it.m.rotation.z = 0.1; } });
-      const snowFall = (n) => fall(n, () => disc(0.035, 0xffffff, 0.95, 0.0), { speed: 0.55, place: (it, t) => it.m.position.set(it.x + Math.sin(t * 1.3 + it.ph) * 0.06, it.y, 0) });
-      let boltGeo = null;
-      const bolt = () => {
-        if (!boltGeo) { const s = new THREE.Shape(); [[0.1, -0.18], [-0.12, -0.55], [0.0, -0.55], [-0.1, -0.95], [0.18, -0.48], [0.05, -0.48], [0.2, -0.18]].forEach((p, i) => (i ? s.lineTo(...p) : s.moveTo(...p))); boltGeo = new THREE.ShapeGeometry(s); }
-        const m = flat(boltGeo, 0xfde047, 0, 0.03);
-        return { m, update: (t) => { const p = t % 3.7, on = q.get('flash') === '1' || p < 0.08 || (p > 0.18 && p < 0.26); /* ?flash=1 holds the bolt on for previewing */ m.material.opacity = on ? 1 : 0; return on ? 1 : 0; } };
-      };
-      const fogBars = () => {
-        const g = new THREE.Group(), rows = [-0.45, -0.68, -0.9].map((y, i) => { const b = bar(0.95 - i * 0.12, 0.09, 0xcbd5e1, 0.45, 0); b.position.y = y; g.add(b); return b; });
-        return { g, update: (t) => rows.forEach((b, i) => { b.position.x = Math.sin(t * 0.5 + i * 1.7) * 0.18; b.material.opacity = 0.3 + 0.2 * Math.sin(t * 0.8 + i); }) };
-      };
-
-      // compose an icon for a weather kind: returns { group, update(t, dt) -> flash 0..1 }
-      function buildIcon(kind) {
-        const group = new THREE.Group(), parts = [];
-        const add = (obj, x = 0, y = 0, s = 1) => { const o = obj.g || obj.m || obj; o.position.x += x; o.position.y += y; o.scale.multiplyScalar(s); group.add(o); if (obj.update) parts.push(obj); return obj; };
-        const drift = (c) => ({ g: c, update: (t) => { c.userData.bx ??= c.position.x; c.position.x = c.userData.bx + Math.sin(t * 0.4 + c.position.y * 3) * 0.04; } });
-        let flash = null;
-        switch (kind) {
-          case 'clear': add(sun()); break;
-          case 'clear-night': add(moon()); break;
-          case 'partly-cloudy': add(sun(), -0.28, 0.28, 0.72); add(drift(cloud(0xf1f5f9)), 0.1, -0.08, 0.95); break;
-          case 'partly-cloudy-night': add(moon(), -0.28, 0.28, 0.72); add(drift(cloud(0xe2e8f0)), 0.1, -0.08, 0.95); break;
-          case 'cloudy': add(drift(cloud(0x94a3b8)), -0.3, 0.3, 0.72); add(drift(cloud(0xe2e8f0)), 0.08, -0.02, 0.98); break;
-          case 'fog': add(drift(cloud(0xa8b4c4)), 0, 0.3, 0.95); add(fogBars()); break;
-          case 'rain': add(drift(cloud(0x94a3b8)), 0, 0.3, 0.95); add(rainFall(14)); break;
-          case 'snow': add(drift(cloud(0xcbd5e1)), 0, 0.3, 0.95); add(snowFall(14)); break;
-          case 'thunder': add(drift(cloud(0x64748b)), 0, 0.3, 0.95); add(rainFall(9)); flash = add(bolt()); break;
-          default: add(drift(cloud(0xcbd5e1)), 0, 0.1, 1);
-        }
-        return { group, update: (t, dt) => { parts.forEach((p) => p.update(t, dt)); return flash ? flash.update(t) : 0; } };
-      }
-
-      // ---- time dial: 60 second ticks + analog hands ----
-      const dial = new THREE.Group(), ticks = [];
-      for (let i = 0; i < 60; i++) {
-        const a = (i / 60) * Math.PI * 2, big = i % 5 === 0, t = bar(big ? 0.035 : 0.022, big ? 0.13 : 0.08, 0xffffff, 0.2, 0);
-        t.position.set(Math.sin(a) * 0.93, Math.cos(a) * 0.93, 0); t.rotation.z = -a; dial.add(t); ticks.push(t);
-      }
-      const hand = (len, w, color, tail = 0.08) => { const pivot = new THREE.Group(), b = bar(w, len + tail, color, 1, 0.03); b.position.y = (len - tail) / 2; pivot.add(b); dial.add(pivot); return pivot; };
-      const hourHand = hand(0.46, 0.06, 0xf8fafc), minHand = hand(0.7, 0.045, 0xe2e8f0), secHand = hand(0.82, 0.015, 0xf87171, 0.16);
-      dial.add(disc(0.07, 0xf8fafc, 1, 0.04), disc(0.03, 0xf87171, 1, 0.05));
-      scene.add(dial);
-
-      // ---- humidity droplet that fills with water ----
-      const humGroup = new THREE.Group();
-      const dropShape = new THREE.Shape();
-      dropShape.moveTo(0, 1.05); dropShape.bezierCurveTo(0.12, 0.75, 0.7, 0.3, 0.7, -0.3);
-      dropShape.absarc(0, -0.3, 0.7, 0, Math.PI, true); dropShape.bezierCurveTo(-0.7, 0.3, -0.12, 0.75, 0, 1.05);
-      const dropGeo = new THREE.ShapeGeometry(dropShape, 28);
-      const waterMat = new THREE.ShaderMaterial({
-        transparent: true, depthTest: false, depthWrite: false,
-        uniforms: { uLevel: { value: -1 }, uTime: { value: 0 } },
-        vertexShader: 'varying vec2 vPos; void main(){ vPos = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-        fragmentShader: `uniform float uLevel; uniform float uTime; varying vec2 vPos;
-          void main(){
-            float wave = sin(vPos.x * 6.0 + uTime * 2.0) * 0.028 + sin(vPos.x * 11.0 - uTime * 1.5) * 0.014;
-            float surf = uLevel + wave;
-            if (vPos.y > surf) { gl_FragColor = vec4(0.55, 0.75, 1.0, 0.07); return; }
-            float depth = clamp((surf - vPos.y) / 1.9, 0.0, 1.0);
-            vec3 c = mix(vec3(0.20, 0.62, 1.0), vec3(0.02, 0.24, 0.68), depth);
-            c += smoothstep(0.06, 0.0, surf - vPos.y) * 0.35; // bright line along the surface
-            gl_FragColor = vec4(c, 0.96);
-          }`,
-      });
-      humGroup.add(new THREE.Mesh(dropGeo, waterMat));
-      const rim = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(dropShape.getPoints(64)), new THREE.LineBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.85, depthTest: false }));
-      rim.position.z = 0.02; humGroup.add(rim);
-      const shine = disc(1, 0xffffff, 0.22, 0.03); shine.scale.set(0.07, 0.24, 1); shine.position.set(-0.36, 0.05, 0.03); shine.rotation.z = 0.25; humGroup.add(shine);
-      const bubbles = Array.from({ length: 7 }, () => { const m = disc(rand(0.025, 0.05), 0xffffff, 0.35, 0.02); humGroup.add(m); return { m, x: rand(-0.32, 0.32), y: rand(-0.9, 0), v: rand(0.12, 0.3), ph: rand(0, 6.28) }; });
-      scene.add(humGroup);
-
-      // ---- layout: three slots matching the CSS grid cells ----
-      const slots = [dial, null, humGroup]; // slot 1 is the swappable weather icon
-      let weatherGroup = null, icon = null, iconKind = null, bornAt = 0;
-      const placeInfo = [{}, {}, {}];
-      function layout() {
-        const w = window.innerWidth, h = window.innerHeight, a = w / h, portrait = a < 1.1;
-        renderer.setSize(w, h, false); // CSS already sizes the canvas to the viewport
-        camera.left = -a; camera.right = a; camera.updateProjectionMatrix();
+    clockText(); refresh(); setInterval(refresh, 5 * 60 * 1000);
+    if (lib) {
+      const { createStage, makeDial, makeDroplet, weatherIconSlot } = lib;
+      const stage = createStage($('gl')), dial = makeDial(), drop = makeDroplet(), icon = weatherIconSlot(stage);
+      stage.add(dial.group); stage.add(drop.group);
+      const spots = [{}, {}, {}];
+      stage.onResize(({ a, portrait }) => {
         const cw = portrait ? 2 * a : (2 * a) / 3, ch = portrait ? 2 / 3 : 2;
         for (let i = 0; i < 3; i++) {
           const cx = portrait ? 0 : -a + cw * (i + 0.5), cy = portrait ? 1 - ch * (i + 0.5) : 0;
-          placeInfo[i] = portrait
+          spots[i] = portrait
             ? { x: -a + cw * 0.25, y: cy, s: Math.min(cw * 0.2, ch * 0.34) } // icon left, text right
-            : { x: cx, y: cy + ch * 0.15, s: Math.min(cw * 0.42, ch * 0.26) }; // icon above the text
+            : { x: cx, y: cy + ch * 0.17, s: Math.min(cw * 0.46, ch * 0.3) };  // icon above the text, as large as the cell allows without touching the edges
         }
-      }
-      layout(); window.addEventListener('resize', layout);
-
-      const clampLerp = (cur, tgt, k) => cur + (tgt - cur) * k;
-      let tmpColor = new THREE.Color();
-      function frame(t, dt) {
-        // swap the weather icon when the condition changes
-        if (state.kind !== iconKind) {
-          if (weatherGroup) { scene.remove(weatherGroup); weatherGroup.traverse((o) => o.material && o.material.dispose()); }
-          icon = buildIcon(state.kind); weatherGroup = icon.group; scene.add(weatherGroup); iconKind = state.kind; bornAt = t;
-        }
-        // background colour easing
-        const pal = PALETTE[state.kind] || PALETTE.cloudy, k = 1 - Math.exp(-dt * 1.4);
-        bgTop.lerp(tmpColor.set(pal[0]), k); bgBot.lerp(tmpColor.set(pal[1]), k);
-
-        const flash = icon.update(t, dt);
-        bgMat.uniforms.uFlash.value = flash * 0.9;
-
-        // slots: dial, weather icon (pops in with a little overshoot), droplet
-        const pop = Math.min((t - bornAt) / 0.9, 1), ease = 1 + 2.2 * Math.pow(pop - 1, 3) + 1.2 * Math.pow(pop - 1, 2);
-        const targets = [dial, weatherGroup, humGroup];
-        targets.forEach((g, i) => { const p = placeInfo[i], s = p.s * (i === 1 ? ease : 1); g.position.set(p.x, p.y + (i === 1 ? Math.sin(t * 0.9) * 0.015 : 0), 0); g.scale.setScalar(Math.max(s, 0.0001)); });
-
-        // dial
-        const now = londonNow(), sec = now.s + now.ms / 1000, min = now.m + sec / 60, hr = (now.h % 12) + min / 60;
-        ticks.forEach((tk, i) => {
-          const passed = i <= now.s, cur = i === now.s;
-          tk.material.color.setHex(cur ? 0xffffff : passed ? 0x38bdf8 : 0xffffff);
-          tk.material.opacity = cur ? 1 : passed ? 0.75 : 0.18;
-          tk.scale.y = (i % 5 === 0 ? 0.13 : 0.08) * (cur ? 1.7 : 1); tk.scale.x = (i % 5 === 0 ? 0.035 : 0.022) * (cur ? 1.6 : 1);
-        });
-        secHand.rotation.z = -(sec / 60) * Math.PI * 2; minHand.rotation.z = -(min / 60) * Math.PI * 2; hourHand.rotation.z = -(hr / 12) * Math.PI * 2;
-
-        // droplet: ease the level toward the humidity, wobble the bubbles
-        const target = state.hum == null ? 0 : state.hum;
-        state.humShown = clampLerp(state.humShown, target, 1 - Math.exp(-dt * 1.6));
-        waterMat.uniforms.uLevel.value = -1 + (state.humShown / 100) * 2; waterMat.uniforms.uTime.value = t;
-        const top = Math.min(waterMat.uniforms.uLevel.value - 0.1, 0.5);
-        bubbles.forEach((b) => {
-          b.y += b.v * dt; if (b.y > top) { b.y = -0.95; b.x = rand(-0.3, 0.3); }
-          b.m.position.set(b.x + Math.sin(t * 2 + b.ph) * 0.03, b.y, 0.02); b.m.visible = top > -0.85;
-        });
-
-        // full-screen particles
-        const a = Math.abs(camera.left), showRain = state.kind === 'rain' || state.kind === 'thunder', showSnow = state.kind === 'snow', showStars = state.kind.endsWith('night');
-        rain.visible = showRain; snow.visible = showSnow; starsA.visible = starsB.visible = showStars;
-        if (showRain) {
-          rainDrops.forEach((d, i) => {
-            d.y -= d.v * dt; if (d.y < -1.2) { d.y = 1.2; d.x = rand(-a - 0.3, a + 0.3); }
-            rainPos.set([d.x, d.y, 0, d.x - d.l * 0.25, d.y + d.l, 0], i * 6);
-          }); rainGeo.attributes.position.needsUpdate = true;
-        }
-        if (showSnow) {
-          flakes.forEach((f, i) => {
-            f.y -= f.v * dt; if (f.y < -1.1) { f.y = 1.1; f.x = rand(-a - 0.3, a + 0.3); }
-            snowPos.set([f.x + Math.sin(t * 0.8 + f.ph) * f.a, f.y, 0], i * 3);
-          }); snowGeo.attributes.position.needsUpdate = true;
-        }
-        if (showStars) { starsA.material.opacity = 0.4 + 0.5 * Math.sin(t * 1.3); starsB.material.opacity = 0.4 + 0.5 * Math.sin(t * 1.3 + 2.2); }
-
-        renderer.render(scene, camera);
-      }
-      return { frame };
+      });
+      let lastText = 0;
+      stage.start((t, dt) => {
+        if (t - lastText > 0.25) { lastText = t; clockText(); }
+        const kind = state.w ? state.w.kind : 'cloudy';
+        stage.setKind(kind);
+        dial.update(); stage.place(dial.group, spots[0].x, spots[0].y, spots[0].s);
+        icon.update(t, dt, kind, spots[1].x, spots[1].y, spots[1].s);
+        drop.update(t, dt, state.w ? state.w.hum : 0); stage.place(drop.group, spots[2].x, spots[2].y, spots[2].s * 0.92);
+        const shown = Math.round(drop.shown);
+        if (state.w && shown !== lastHum) { lastHum = shown; $('hum').innerHTML = `${shown}<span class="unit">%</span>`; }
+      });
     }
-
-    // ---------- main loop: ~30 fps is plenty for a wall display and kind to a Pi ----------
-    let last = performance.now(), lastText = 0, lastHumText = null;
-    function loop(ts) {
-      requestAnimationFrame(loop);
-      const dt = (ts - last) / 1000;
-      if (dt < 1 / 30) return;
-      last = ts;
-      if (ts - lastText > 250) { lastText = ts; updateClockText(); }
-      if (sceneApi) sceneApi.frame(ts / 1000, Math.min(dt, 0.1));
-      else if (state.hum !== null) state.humShown = state.hum; // no WebGL: skip the count-up
-      if (state.hum !== null) { // number counts up in step with the droplet filling
-        const shown = Math.round(state.humShown);
-        if (shown !== lastHumText) { lastHumText = shown; $('hum').innerHTML = `${shown}<span class="unit">%</span>`; }
-      }
-    }
-    updateClockText();
-    fetchWeather();
-    setInterval(fetchWeather, REFRESH_MS);
-    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
