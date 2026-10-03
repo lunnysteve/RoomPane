@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giant Clock</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent: #3b82f6;
+    }
+
+    body, html {
+      width: 100vw;
+      height: 100vh;
+      background: #05070c;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Time-of-day gradient washes, cross-faded via opacity */
+    .ambient {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 3s ease-in-out;
+    }
+    .ambient.active { opacity: 1; }
+    .ambient-dawn   { background: radial-gradient(circle at 50% 110%, #3a2a4d 0%, #05070c 60%); }
+    .ambient-day    { background: radial-gradient(circle at 50% 110%, #1b3a5c 0%, #05070c 60%); }
+    .ambient-dusk   { background: radial-gradient(circle at 50% 110%, #4d2a3a 0%, #05070c 60%); }
+    .ambient-night  { background: radial-gradient(circle at 50% 110%, #131b2e 0%, #05070c 60%); }
+
+    /* Soft floating glow orb behind the clock */
+    .glow-orb {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 60vw;
+      height: 60vw;
+      max-width: 700px;
+      max-height: 700px;
+      background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+      opacity: 0.12;
+      filter: blur(40px);
+      transform: translate(-50%, -50%);
+      animation: pulseGlow 8s ease-in-out infinite;
+      z-index: 0;
+      transition: background 3s ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.1; }
+      50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.18; }
+    }
+
+    .clock-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      line-height: 0.95;
+      width: 95vw;
+      height: 95vh;
+      position: relative;
+      z-index: 1;
+    }
+    .time {
+      font-size: clamp(120px, 28vw, 280px);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-shadow: 0 0 60px rgba(59, 130, 246, 0.15);
+    }
+    .colon {
+      color: rgba(255, 255, 255, 0.35);
+      animation: blink 1s step-start infinite;
+      margin: 0 -0.02em;
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+    .ampm {
+      font-size: clamp(28px, 6vw, 60px);
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.4);
+      margin-left: 15px;
+      text-transform: uppercase;
+    }
+    .date {
+      font-size: clamp(24px, 5vw, 48px);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 20px;
+      text-transform: uppercase;
+    }
+    .divider-line {
+      width: 60px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--accent);
+      margin: 18px 0;
+      opacity: 0.6;
+      animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: 0.1s;
+    }
+    .time {
+      animation: scaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .date {
+      animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: 0.15s;
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.92);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes fadeInSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient ambient-dawn" id="ambientDawn"></div>
+  <div class="ambient ambient-day" id="ambientDay"></div>
+  <div class="ambient ambient-dusk" id="ambientDusk"></div>
+  <div class="ambient ambient-night" id="ambientNight"></div>
+  <div class="glow-orb" id="glowOrb"></div>
+
+  <div class="clock-container">
+    <div class="time">
+      <span id="hours">00</span>
+      <span class="colon">:</span>
+      <span id="minutes">00</span>
+      <span id="ampm" class="ampm">AM</span>
+    </div>
+    <div class="divider-line"></div>
+    <div id="date" class="date">Loading...</div>
+  </div>
+
+  <script>
+    const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const PERIODS = {
+      dawn:  { el: 'ambientDawn',  accent: '#c07bd8' },
+      day:   { el: 'ambientDay',   accent: '#3b82f6' },
+      dusk:  { el: 'ambientDusk',  accent: '#e0668a' },
+      night: { el: 'ambientNight', accent: '#5b6bd6' }
+    };
+
+    function getPeriod(hour) {
+      if (hour >= 5 && hour < 8) return 'dawn';
+      if (hour >= 8 && hour < 17) return 'day';
+      if (hour >= 17 && hour < 20) return 'dusk';
+      return 'night';
+    }
+
+    let currentPeriod = null;
+    function updateAmbient(hour) {
+      const period = getPeriod(hour);
+      if (period === currentPeriod) return;
+      currentPeriod = period;
+
+      Object.entries(PERIODS).forEach(([key, cfg]) => {
+        document.getElementById(cfg.el).classList.toggle('active', key === period);
+      });
+
+      document.getElementById('glowOrb').style.background =
+        `radial-gradient(circle, ${PERIODS[period].accent} 0%, transparent 70%)`;
+      document.documentElement.style.setProperty('--accent', PERIODS[period].accent);
+    }
+
+    function updateTime() {
+      const now = new Date();
+      let h = now.getHours();
+      const m = now.getMinutes();
+      const ap = h >= 12 ? 'PM' : 'AM';
+
+      updateAmbient(h);
+
+      h = h % 12 || 12;
+
+      document.getElementById('hours').textContent = String(h).padStart(2, '0');
+      document.getElementById('minutes').textContent = String(m).padStart(2, '0');
+      document.getElementById('ampm').textContent = ap;
+
+      document.getElementById('date').textContent =
+        `${DAYS[now.getDay()]} · ${MONTHS[now.getMonth()]} ${now.getDate()}`;
+    }
+
+    updateTime();
+    setInterval(updateTime, 1000);
+  </script>
+</body>
+</html>

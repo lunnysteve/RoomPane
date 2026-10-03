@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>School Countdown</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #000;
+      --fg: #fff;
+      --muted: rgba(255, 255, 255, 0.45);
+      --accent: #10b981; /* green for holidays/end of school */
+    }
+
+    html, body {
+      width: 100vw; height: 100vh;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    /* ═══════════ COUNTDOWN HERO AREA ═══════════ */
+    .countdown-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 95vw;
+      height: 95vh;
+      gap: 2.5vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Giant Days Section */
+    .days-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 0.9;
+    }
+
+    .days-number-giant {
+      font-size: clamp(140px, 32vw, 320px);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      color: var(--accent);
+      animation: scaleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    .days-label-giant {
+      font-size: clamp(20px, 4.2vw, 42px);
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      color: var(--fg);
+      text-transform: uppercase;
+      margin-top: 10px;
+      animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: 0.15s;
+    }
+
+    /* Sub-Time Row (Hours : Mins : Secs) */
+    .sub-time-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3vw;
+      margin-top: 0.5vh;
+      animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: 0.22s;
+    }
+
+    .time-segment {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .segment-number {
+      font-size: clamp(40px, 8.5vw, 95px);
+      font-weight: 900;
+      color: var(--fg);
+      line-height: 1;
+    }
+
+    .segment-label {
+      font-size: clamp(10px, 1.8vw, 18px);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .time-divider {
+      font-size: clamp(30px, 6.5vw, 75px);
+      font-weight: 900;
+      color: var(--muted);
+      line-height: 0.8;
+      align-self: flex-start;
+      margin-top: -3px;
+    }
+
+    .sub-message {
+      font-size: clamp(14px, 2.8vw, 24px);
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin-top: 15px;
+      text-transform: uppercase;
+      animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: 0.3s;
+    }
+
+    @keyframes fadeInSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.85);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Floating background elements */
+    .floating-emoji {
+      position: absolute;
+      font-size: clamp(20px, 4vw, 40px);
+      user-select: none;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.15;
+      animation: floatUp 8s linear infinite;
+    }
+
+    @keyframes floatUp {
+      0% {
+        transform: translateY(105vh) translateX(0) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 0.22;
+      }
+      90% {
+        opacity: 0.22;
+      }
+      100% {
+        transform: translateY(-10vh) translateX(50px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- COUNTDOWN CONTENT -->
+  <div class="countdown-container">
+    <!-- Days at the top -->
+    <div class="days-section">
+      <div class="days-number-giant" id="daysNum">--</div>
+      <div class="days-label-giant" id="daysLabel">Days Remaining</div>
+    </div>
+    
+    <!-- Hours, Mins, Secs row -->
+    <div class="sub-time-row">
+      <div class="time-segment">
+        <div class="segment-number" id="hoursNum">--</div>
+        <div class="segment-label">Hours</div>
+      </div>
+      <div class="time-divider">:</div>
+      <div class="time-segment">
+        <div class="segment-number" id="minsNum">--</div>
+        <div class="segment-label">Mins</div>
+      </div>
+      <div class="time-divider">:</div>
+      <div class="time-segment">
+        <div class="segment-number" id="secsNum">--</div>
+        <div class="segment-label">Secs</div>
+      </div>
+    </div>
+
+    <div class="sub-message">Until the End of School (21 July 2026)</div>
+  </div>
+
+<script>
+  /* ── COUNTDOWN LOGIC ── */
+  let cSettings = {
+    targetDate: '2026-07-21',
+    subMessage: 'Until the End of School (21 July 2026)',
+    activeLabel: 'Days Remaining',
+    finishLabel: 'Summer Holidays!'
+  };
+
+  function loadSettingsAndCalculate() {
+    const stored = localStorage.getItem('countdown_settings');
+    if (stored) {
+      try {
+        cSettings = { ...cSettings, ...JSON.parse(stored) };
+      } catch(e) {}
+    }
+
+    // Apply subtitle text
+    const subEl = document.querySelector('.sub-message');
+    if (subEl) subEl.textContent = cSettings.subMessage;
+
+    // Apply main days label
+    const labelEl = document.getElementById('daysLabel');
+    if (labelEl) labelEl.textContent = cSettings.activeLabel;
+
+    let targetStr = cSettings.targetDate;
+    if (targetStr.length === 10) {
+      targetStr += 'T12:00:00';
+    }
+    const targetDate = new Date(targetStr);
+    
+    function tick() {
+      const now = new Date();
+      const diffTime = targetDate - now;
+
+      const daysEl = document.getElementById('daysNum');
+      const hoursEl = document.getElementById('hoursNum');
+      const minsEl = document.getElementById('minsNum');
+      const secsEl = document.getElementById('secsNum');
+
+      if (diffTime > 0) {
+        const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diffTime % (1000 * 60)) / 1000);
+
+        if (daysEl) daysEl.textContent = days;
+        if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
+        if (minsEl) minsEl.textContent = String(minutes).padStart(2, '0');
+        if (secsEl) secsEl.textContent = String(seconds).padStart(2, '0');
+      } else {
+        const container = document.querySelector('.countdown-container');
+        if (container) {
+          container.innerHTML = `
+            <div class="time-segment">
+              <div class="days-number-giant" style="font-size: clamp(100px, 20vw, 260px)">☀️</div>
+              <div class="days-label-giant" style="font-size: clamp(24px, 5vw, 48px)">${cSettings.finishLabel}</div>
+            </div>
+          `;
+        }
+        clearInterval(intervalId);
+      }
+    }
+
+    tick();
+    const intervalId = setInterval(tick, 1000);
+  }
+  loadSettingsAndCalculate();
+
+  // Dynamic floating fun emojis
+  function createFloatingEmojis() {
+    const emojis = ['☀️', '🏖️', '🎈', '🎉', '🎒', '📚', '⚽', '🍦', '🍉'];
+    const container = document.body;
+    
+    setInterval(() => {
+      if (document.querySelectorAll('.floating-emoji').length > 15) return;
+      
+      const el = document.createElement('div');
+      el.className = 'floating-emoji';
+      el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      
+      el.style.left = Math.random() * 100 + 'vw';
+      const size = Math.random() * 20 + 20; 
+      el.style.fontSize = size + 'px';
+      
+      const duration = Math.random() * 6 + 7; 
+      el.style.animationDuration = duration + 's';
+      
+      container.appendChild(el);
+      
+      setTimeout(() => {
+        el.remove();
+      }, duration * 1000);
+    }, 1800);
+  }
+  createFloatingEmojis();
+</script>
+</body>
+</html>

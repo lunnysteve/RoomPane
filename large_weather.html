@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giant Weather</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body, html {
+      width: 100vw;
+      height: 100vh;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: background 2.5s ease-in-out;
+      color: #fff;
+    }
+
+    /* Background state gradients */
+    .bg-clear { background: linear-gradient(135deg, #1b263b 0%, #0d131f 100%); }
+    .bg-clear-night { background: linear-gradient(135deg, #0b132b 0%, #010409 100%); }
+    .bg-partly-cloudy { background: linear-gradient(135deg, #1f2d3d 0%, #0f172a 100%); }
+    .bg-partly-cloudy-night { background: linear-gradient(135deg, #0f172a 0%, #020617 100%); }
+    .bg-cloudy { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+    .bg-fog { background: linear-gradient(135deg, #334155 0%, #0f172a 100%); }
+    .bg-rain { background: linear-gradient(135deg, #0f172a 0%, #020617 100%); }
+    .bg-snow { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+    .bg-thunder { background: linear-gradient(135deg, #090d16 0%, #020408 100%); }
+
+    /* Particles container */
+    .weather-particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Particle elements */
+    .rain-drop-particle {
+      position: absolute;
+      background: linear-gradient(transparent, rgba(66, 165, 245, 0.45));
+      width: 1.5px;
+      height: 45px;
+      animation: fallRainParticle linear infinite;
+    }
+    @keyframes fallRainParticle {
+      0% { transform: translateY(-50px) rotate(15deg); }
+      100% { transform: translateY(105vh) rotate(15deg); }
+    }
+
+    .snow-particle {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      opacity: 0.85;
+      animation: fallSnowParticle linear infinite;
+    }
+    @keyframes fallSnowParticle {
+      0% { transform: translateY(-20px) translateX(0); }
+      50% { transform: translateY(50vh) translateX(15px); }
+      100% { transform: translateY(105vh) translateX(-10px); }
+    }
+
+    .weather-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2vh;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    .main-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4vw;
+    }
+
+    .icon-box {
+      width: clamp(240px, 45vw, 420px);
+      height: clamp(240px, 45vw, 420px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: scaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      filter: drop-shadow(0 0 40px rgba(255, 255, 255, 0.08));
+    }
+
+    .icon-box img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .info-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: 0.15s;
+    }
+
+    .temp {
+      font-size: clamp(120px, 26vw, 240px);
+      font-weight: 900;
+      line-height: 0.9;
+      letter-spacing: -0.04em;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .temp-unit {
+      font-size: 0.38em;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.45);
+      margin-top: 0.05em;
+      margin-left: 0.05em;
+    }
+
+    .condition {
+      font-size: clamp(24px, 5vw, 48px);
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.5);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-top: 5px;
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.92);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes fadeInSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stats-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(20px, 4vw, 48px);
+      padding: clamp(14px, 2vh, 22px) clamp(24px, 4vw, 48px);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: 0.3s;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-icon {
+      font-size: clamp(16px, 2vw, 22px);
+      opacity: 0.7;
+    }
+
+    .stat-value {
+      font-size: clamp(16px, 2.4vw, 26px);
+      font-weight: 700;
+    }
+
+    .stat-label {
+      font-size: clamp(9px, 1.2vw, 12px);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .stat-divider {
+      width: 1px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-cloudy">
+  <div class="weather-container">
+    <div class="main-row">
+      <div class="icon-box" id="weatherIcon">
+        <!-- SVG Weather Icon loaded here -->
+      </div>
+      <div class="info-box">
+        <div class="temp" id="temp">--<span class="temp-unit">°C</span></div>
+        <div class="condition" id="condition">Loading...</div>
+      </div>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat">
+        <div class="stat-icon">🌡️</div>
+        <div class="stat-value" id="feelsLike">--°</div>
+        <div class="stat-label">Feels Like</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-icon">💧</div>
+        <div class="stat-value" id="humidity">--%</div>
+        <div class="stat-label">Humidity</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-icon">💨</div>
+        <div class="stat-value" id="wind">-- km/h</div>
+        <div class="stat-label">Wind</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const LAT = 51.4185;
+    const LON = -0.9530;
+
+    const ICONS = {
+      clear: 'clear-day.svg',
+      moon: 'clear-night.svg',
+      pclday: 'partly-cloudy-day.svg',
+      pclnight: 'partly-cloudy-night.svg',
+      cloudy: 'overcast.svg',
+      fog: 'fog.svg',
+      drizzle: 'drizzle.svg',
+      rain: 'rain.svg',
+      hrain: 'extreme-rain.svg',
+      snow: 'snow.svg',
+      thunder: 'thunderstorms.svg'
+    };
+
+    function getInfo(code, isDay) {
+      const m = {
+        0: isDay ? { l: 'Clear', i: ICONS.clear, g: 'clear' } : { l: 'Clear Night', i: ICONS.moon, g: 'clear-night' },
+        1: isDay ? { l: 'Mainly Clear', i: ICONS.pclday, g: 'partly-cloudy' } : { l: 'Mainly Clear', i: ICONS.pclnight, g: 'partly-cloudy-night' },
+        2: isDay ? { l: 'Partly Cloudy', i: ICONS.pclday, g: 'partly-cloudy' } : { l: 'Partly Cloudy', i: ICONS.pclnight, g: 'partly-cloudy-night' },
+        3: { l: 'Overcast', i: ICONS.cloudy, g: 'cloudy' },
+        45: { l: 'Foggy', i: ICONS.fog, g: 'fog' }, 48: { l: 'Icy Fog', i: ICONS.fog, g: 'fog' },
+        51: { l: 'Drizzle', i: ICONS.drizzle, g: 'rain' }, 53: { l: 'Drizzle', i: ICONS.drizzle, g: 'rain' }, 55: { l: 'Drizzle', i: ICONS.drizzle, g: 'rain' },
+        61: { l: 'Light Rain', i: ICONS.rain, g: 'rain' }, 63: { l: 'Rain', i: ICONS.rain, g: 'rain' }, 65: { l: 'Heavy Rain', i: ICONS.hrain, g: 'rain' },
+        71: { l: 'Light Snow', i: ICONS.snow, g: 'snow' }, 73: { l: 'Snow', i: ICONS.snow, g: 'snow' }, 75: { l: 'Heavy Snow', i: ICONS.snow, g: 'snow' }, 77: { l: 'Snow', i: ICONS.snow, g: 'snow' },
+        80: { l: 'Showers', i: ICONS.rain, g: 'rain' }, 81: { l: 'Showers', i: ICONS.rain, g: 'rain' }, 82: { l: 'Heavy Showers', i: ICONS.hrain, g: 'rain' },
+        85: { l: 'Snow Showers', i: ICONS.snow, g: 'snow' }, 86: { l: 'Heavy Snow', i: ICONS.snow, g: 'snow' },
+        95: { l: 'Thunder', i: ICONS.thunder, g: 'thunder' }, 96: { l: 'Thunder', i: ICONS.thunder, g: 'thunder' }, 99: { l: 'Thunder', i: ICONS.thunder, g: 'thunder' },
+      };
+      return m[code] || { l: 'Cloudy', i: ICONS.cloudy, g: 'cloudy' };
+    }
+
+    function updateBackgroundAnimation(group) {
+      document.body.className = 'bg-' + group;
+      
+      let container = document.getElementById('particlesContainer');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'particlesContainer';
+        container.className = 'weather-particles';
+        document.body.appendChild(container);
+      }
+      container.innerHTML = '';
+
+      if (group === 'rain' || group === 'thunder') {
+        const count = 40;
+        for (let i = 0; i < count; i++) {
+          const p = document.createElement('div');
+          p.className = 'rain-drop-particle';
+          p.style.left = Math.random() * 100 + 'vw';
+          p.style.top = Math.random() * -20 + 'vh';
+          p.style.animationDuration = (Math.random() * 0.5 + 0.6) + 's';
+          p.style.animationDelay = (Math.random() * 1.5) + 's';
+          container.appendChild(p);
+        }
+      } else if (group === 'snow') {
+        const count = 30;
+        for (let i = 0; i < count; i++) {
+          const p = document.createElement('div');
+          p.className = 'snow-particle';
+          const size = Math.random() * 4 + 2;
+          p.style.width = size + 'px';
+          p.style.height = size + 'px';
+          p.style.left = Math.random() * 100 + 'vw';
+          p.style.top = Math.random() * -20 + 'vh';
+          p.style.animationDuration = (Math.random() * 2 + 3) + 's';
+          p.style.animationDelay = (Math.random() * 3) + 's';
+          container.appendChild(p);
+        }
+      }
+    }
+
+    async function fetchWeather() {
+      try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day&timezone=Europe%2FLondon`;
+        const r = await fetch(url);
+        const data = await r.json();
+        const c = data.current;
+        const info = getInfo(c.weather_code, c.is_day === 1);
+
+        document.getElementById('temp').innerHTML = `${Math.round(c.temperature_2m)}<span class="temp-unit">°C</span>`;
+        document.getElementById('condition').textContent = info.l;
+        document.getElementById('weatherIcon').innerHTML =
+          `<img src="https://cdn.jsdelivr.net/npm/@meteocons/svg/fill/${info.i}" alt="${info.l}" />`;
+
+        document.getElementById('feelsLike').textContent = `${Math.round(c.apparent_temperature)}°`;
+        document.getElementById('humidity').textContent = `${Math.round(c.relative_humidity_2m)}%`;
+        document.getElementById('wind').textContent = `${Math.round(c.wind_speed_10m)} km/h`;
+
+        updateBackgroundAnimation(info.g || 'cloudy');
+      } catch (err) {
+        document.getElementById('condition').textContent = 'Error Loading';
+      }
+    }
+
+    fetchWeather();
+    // Update every 5 minutes
+    setInterval(fetchWeather, 5 * 60 * 1000);
+  </script>
+</body>
+</html>

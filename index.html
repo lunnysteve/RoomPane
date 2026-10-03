@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Display Controller</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; cursor: none !important; }
+
+    :root {
+      --bg: #000;
+      --fg: #fff;
+      --muted: rgba(255, 255, 255, 0.45);
+      --divider: rgba(255, 255, 255, 0.12);
+      --card: rgba(255, 255, 255, 0.05);
+    }
+
+    body, html {
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Container holding the view and controller */
+    .viewport-container {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #000;
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* TRANSITIONS */
+    
+    /* FADE */
+    .transition-fade iframe {
+      transition: opacity 0.8s ease-in-out;
+    }
+    .transition-fade iframe.active {
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 2;
+    }
+
+    /* SLIDE */
+    .transition-slide iframe {
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.8s ease-in-out;
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    .transition-slide iframe.active {
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 2;
+    }
+    .transition-slide iframe.prev {
+      transform: translateX(-100%);
+      opacity: 0;
+      z-index: 1;
+    }
+
+    /* INSTANT */
+    .transition-instant iframe {
+      transition: none;
+    }
+    .transition-instant iframe.active {
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 2;
+    }
+
+    /* Screen Off Overlay */
+    .screen-off-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 9999;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .screen-off-overlay.active {
+      display: flex;
+    }
+
+    .wake-message {
+      color: var(--muted);
+      font-size: 14px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.8; }
+    }
+
+    /* Settings Button - extremely unobtrusive */
+    .settings-trigger {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      z-index: 10000;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid var(--divider);
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+      opacity: 0.05;
+      text-decoration: none;
+    }
+
+    .settings-trigger:hover {
+      opacity: 1;
+      background: #fff;
+      color: #000;
+    }
+
+    /* No pages alert */
+    .no-pages-alert {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 5;
+      max-width: 80%;
+    }
+    .no-pages-alert h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    .no-pages-alert p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .no-pages-alert a {
+      color: #3b82f6;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="viewport-container transition-fade" id="viewportContainer">
+    <!-- Dynamic iframes are loaded here -->
+    
+    <div id="noPagesAlert" class="no-pages-alert" style="display: none;">
+      <h1>No Active Pages</h1>
+      <p>Configure pages, rotation times, and schedules in the admin console.</p>
+      <a href="/admin">Go to Admin Dashboard</a>
+    </div>
+
+    <!-- Screen Off Sleep Overlay -->
+    <div id="sleepOverlay" class="screen-off-overlay" onclick="wakeScreen()">
+      <div class="wake-message">Tap to Wake</div>
+    </div>
+
+    <!-- Admin Link Button -->
+    <a class="settings-trigger" href="/admin" title="Admin Dashboard">⚙️</a>
+  </div>
+
+  <script>
+    let settings = {
+      sleepTime: '23:00',
+      wakeTime: '07:00',
+      transition: 'fade'
+    };
+
+    let allPages = [];
+    let activePages = [];
+    let rotationIndex = 0;
+    let rotationTimeout = null;
+    let isSleeping = false;
+    let pageFetchInterval = null;
+
+    // Fetch config configuration from server
+    async function loadServerConfig() {
+      try {
+        const response = await fetch('/api/config');
+        if (!response.ok) throw new Error('API request failed');
+        const data = await response.json();
+        
+        const oldPages = JSON.stringify(allPages);
+        const oldSettings = JSON.stringify(settings);
+        
+        allPages = data.pages || [];
+        settings = data.settings || settings;
+
+        // If something changed, re-initialize
+        if (oldPages !== JSON.stringify(allPages) || oldSettings !== JSON.stringify(settings)) {
+          initDisplay();
+        }
+      } catch (err) {
+        console.error('Failed to load server config:', err);
+      }
+    }
+
+    // Check if a page's schedule allows it to run right now
+    function isPageInSchedule(page) {
+      if (!page.schedule || !page.schedule.enabled) {
+        return true; // No schedule means always show
+      }
+
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentDay = now.getDay(); // 0 is Sunday, 6 is Saturday
+
+      // Day check
+      const days = page.schedule.days || [0,1,2,3,4,5,6];
+      if (!days.includes(currentDay)) {
+        return false;
+      }
+
+      // Hour check
+      const start = page.schedule.startHour ?? 0;
+      const end = page.schedule.endHour ?? 23;
+
+      if (start <= end) {
+        return currentHour >= start && currentHour <= end;
+      } else {
+        // Over midnight scheduling (e.g. 22:00 to 06:00)
+        return currentHour >= start || currentHour <= end;
+      }
+    }
+
+    function initDisplay() {
+      // Apply transition class
+      const container = document.getElementById('viewportContainer');
+      container.className = `viewport-container transition-${settings.transition || 'fade'}`;
+
+      // Filter active pages that match schedule
+      activePages = allPages.filter(p => p.active && isPageInSchedule(p));
+
+      // Clear existing iframes
+      const existingIframes = container.querySelectorAll('iframe');
+      existingIframes.forEach(f => f.remove());
+
+      if (activePages.length === 0) {
+        document.getElementById('noPagesAlert').style.display = 'block';
+        if (rotationTimeout) clearTimeout(rotationTimeout);
+        return;
+      }
+
+      document.getElementById('noPagesAlert').style.display = 'none';
+
+      // Create iframe elements
+      activePages.forEach((p, idx) => {
+        const frame = document.createElement('iframe');
+        frame.id = 'iframe_' + p.id;
+        frame.src = p.url;
+        if (idx === 0) {
+          frame.className = 'active';
+        }
+        container.insertBefore(frame, container.firstChild);
+      });
+
+      // Reset and run rotation
+      rotationIndex = 0;
+      setupRotation();
+    }
+
+    function setupRotation() {
+      if (rotationTimeout) clearTimeout(rotationTimeout);
+      if (isSleeping || activePages.length <= 1) return;
+
+      const cycle = () => {
+        if (isSleeping || activePages.length <= 1) return;
+
+        // Hide current active page iframe
+        const currPage = activePages[rotationIndex];
+        const currFrame = document.getElementById('iframe_' + currPage.id);
+        
+        // Increment index parameters loop
+        rotationIndex = (rotationIndex + 1) % activePages.length;
+        const nextPage = activePages[rotationIndex];
+        const nextFrame = document.getElementById('iframe_' + nextPage.id);
+
+        if (settings.transition === 'slide') {
+          // Slide handling: mark previous as prev, next as active
+          if (currFrame) {
+            currFrame.className = 'prev';
+            // Clean up prev class after transition completes
+            setTimeout(() => {
+              if (currFrame.className === 'prev') currFrame.className = '';
+            }, 850);
+          }
+          if (nextFrame) {
+            // Force reload to grab fresh data before slide in
+            try { nextFrame.contentWindow.location.reload(); } catch(e) {}
+            nextFrame.className = 'active';
+          }
+        } else {
+          // Fade / Instant handling
+          if (currFrame) currFrame.classList.remove('active');
+          if (nextFrame) {
+            try { nextFrame.contentWindow.location.reload(); } catch(e) {}
+            nextFrame.classList.add('active');
+          }
+        }
+
+        rotationTimeout = setTimeout(cycle, (nextPage.time || 30) * 1000);
+      };
+
+      const initialPage = activePages[rotationIndex];
+      rotationTimeout = setTimeout(cycle, (initialPage.time || 30) * 1000);
+    }
+
+    function checkSleepCycle() {
+      const now = new Date();
+      const currentMin = now.getHours() * 60 + now.getMinutes();
+
+      const [sH, sM] = (settings.sleepTime || '23:00').split(':').map(Number);
+      const [wH, wM] = (settings.wakeTime || '07:00').split(':').map(Number);
+      
+      const sleepMin = sH * 60 + sM;
+      const wakeMin = wH * 60 + wM;
+
+      let shouldSleep = false;
+
+      if (sleepMin < wakeMin) {
+        shouldSleep = (currentMin >= sleepMin && currentMin < wakeMin);
+      } else {
+        shouldSleep = (currentMin >= sleepMin || currentMin < wakeMin);
+      }
+
+      if (shouldSleep) {
+        if (!isSleeping) {
+          isSleeping = true;
+          document.getElementById('sleepOverlay').classList.add('active');
+          if (rotationTimeout) clearTimeout(rotationTimeout);
+        }
+      } else {
+        if (isSleeping) {
+          wakeScreen();
+        }
+      }
+    }
+
+    function wakeScreen() {
+      isSleeping = false;
+      document.getElementById('sleepOverlay').classList.remove('active');
+      setupRotation();
+    }
+
+    // Initialize display rotator
+    loadServerConfig().then(() => {
+      checkSleepCycle();
+    });
+
+    // Check sleep every 15 seconds
+    setInterval(checkSleepCycle, 15000);
+
+    // Poll server for config updates every 30 seconds
+    setInterval(loadServerConfig, 30000);
+
+    // Refresh layout when window is refocused (useful for local debug)
+    window.addEventListener('focus', () => {
+      loadServerConfig();
+    });
+  </script>
+</body>
+</html>

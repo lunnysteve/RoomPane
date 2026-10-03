@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NASA APOD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body, html {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Background image with Ken Burns effect */
+    .bg-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      z-index: 0;
+      transform: scale(1);
+      animation: kenBurns 40s ease-in-out infinite alternate;
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out;
+    }
+
+    @keyframes kenBurns {
+      0% {
+        transform: scale(1.02) translate(0, 0);
+      }
+      100% {
+        transform: scale(1.15) translate(-1%, -1%);
+      }
+    }
+
+    /* Vignette and dark gradient overlay for text legibility */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.8) 100%),
+                  linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.2) 60%, transparent 100%);
+      z-index: 1;
+    }
+
+    /* Content Area */
+    .content {
+      position: relative;
+      z-index: 2;
+      width: 90vw;
+      height: 85vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 15px;
+      pointer-events: none;
+    }
+
+    .meta-line {
+      font-size: clamp(10px, 1.8vw, 15px);
+      font-weight: 900;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #3b82f6; /* space blue accent */
+      animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .title {
+      font-size: clamp(26px, 5vw, 52px);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      max-width: 85%;
+      animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: 0.15s;
+    }
+
+    .explanation {
+      font-size: clamp(13px, 2vw, 20px);
+      font-weight: 400;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.7);
+      max-width: 75%;
+      margin-top: 5px;
+      animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: 0.3s;
+    }
+
+    /* Video wrapper if daily media is video */
+    .video-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .video-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    @keyframes fadeInSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-image" id="bgImage"></div>
+  <div class="video-container" id="videoContainer" style="display: none;"></div>
+  <div class="overlay"></div>
+
+  <div class="content">
+    <div class="meta-line" id="metaLine">ASTRONOMY PICTURE OF THE DAY</div>
+    <div class="title" id="title">Loading Cosmos...</div>
+    <div class="explanation" id="explanation">Connecting to NASA planetary database to retrieve today's daily visual record.</div>
+  </div>
+
+  <script>
+    async function fetchNASA() {
+      try {
+        const url = 'https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY';
+        const r = await fetch(url);
+        const data = await r.json();
+        
+        const bgImage = document.getElementById('bgImage');
+        const videoContainer = document.getElementById('videoContainer');
+        const titleEl = document.getElementById('title');
+        const expEl = document.getElementById('explanation');
+        const metaEl = document.getElementById('metaLine');
+
+        titleEl.textContent = data.title || 'Cosmic View';
+        
+        // Truncate explanation to around 2 sentences for rapid readability on smart dashboards
+        if (data.explanation) {
+          const sentences = data.explanation.match(/[^.!?]+[.!?]+/g) || [data.explanation];
+          const summary = sentences.slice(0, 2).join(' ').trim();
+          expEl.textContent = summary;
+        }
+
+        if (data.date) {
+          const d = new Date(data.date);
+          const formattedDate = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          metaEl.textContent = `NASA APOD · ${formattedDate}`;
+        }
+
+        if (data.media_type === 'video') {
+          videoContainer.style.display = 'block';
+          bgImage.style.display = 'none';
+          videoContainer.innerHTML = `<iframe src="${data.url}&autoplay=1&mute=1&controls=0&loop=1" allow="autoplay"></iframe>`;
+        } else {
+          const imgUrl = data.hdurl || data.url;
+          if (imgUrl) {
+            bgImage.style.backgroundImage = `url('${imgUrl}')`;
+            bgImage.style.opacity = 1;
+          }
+        }
+      } catch (err) {
+        document.getElementById('title').textContent = 'Cosmic Connection Lost';
+        document.getElementById('explanation').textContent = 'Failed to retrieve today\'s NASA photograph. Please check network connection.';
+      }
+    }
+
+    fetchNASA();
+    // Refresh once every 4 hours
+    setInterval(fetchNASA, 4 * 60 * 60 * 1000);
+  </script>
+</body>
+</html>

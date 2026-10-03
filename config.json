@@ -1,0 +1,19 @@
+{
+  "settings": {
+    "sleepTime": "23:00",
+    "wakeTime": "07:00",
+    "transition": "fade"
+  },
+  "pages": [
+    {
+      "id": "p_1788287857110",
+      "name": "all things",
+      "url": "weather-clock.html",
+      "time": 30,
+      "active": true,
+      "schedule": {
+        "enabled": false
+      }
+    }
+  ]
+}

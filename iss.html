@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ISS Live Feed & Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body, html {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Full-screen video container */
+    .stream-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .stream-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      transform: scale(1.15); /* zoom slightly to crop black bars */
+    }
+
+    /* Dark overlay vignette (heavier at the top now) */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.6) 100%),
+                  linear-gradient(to bottom, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.3) 25%, transparent 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Top Bar Panel */
+    .top-bar {
+      position: relative;
+      z-index: 2;
+      width: 92vw;
+      height: 12vh;
+      margin: 3vh auto 0;
+      background: rgba(10, 15, 30, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 0 25px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 30px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+      animation: slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-40px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .header {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tag {
+      font-size: clamp(8px, 1vw, 11px);
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      color: #3b82f6;
+      text-transform: uppercase;
+    }
+
+    .title {
+      font-size: clamp(16px, 1.8vw, 24px);
+      font-weight: 900;
+      letter-spacing: -0.01em;
+    }
+
+    /* Stats Block */
+    .stats-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      flex: 1;
+      gap: 20px;
+      max-width: 50vw;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stat-label {
+      font-size: clamp(8px, 1vw, 11px);
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: clamp(14px, 1.6vw, 22px);
+      font-weight: 900;
+      margin-top: 2px;
+    }
+
+    /* Map wrapper */
+    .map-wrapper {
+      width: clamp(70px, 8vw, 100px);
+      height: clamp(70px, 8vw, 100px);
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      overflow: hidden;
+      background: #111;
+      flex-shrink: 0;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Leaflet customization to match style */
+    .leaflet-control-zoom, .leaflet-control-attribution {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="stream-container">
+    <iframe src="https://www.youtube.com/embed/awQzjn72bI0?autoplay=1&mute=1&controls=0&rel=0&playlist=awQzjn72bI0&loop=1&vq=hd720" allow="autoplay; encrypted-media"></iframe>
+  </div>
+  <div class="overlay"></div>
+
+  <div class="top-bar">
+    <div class="header">
+      <div class="tag">Live Telemetry</div>
+      <div class="title">ISS Tracker</div>
+    </div>
+
+    <!-- Stats Row in Center -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-label">Latitude</div>
+        <div class="stat-value" id="latVal">--°</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Longitude</div>
+        <div class="stat-value" id="lonVal">--°</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Altitude</div>
+        <div class="stat-value">~420 km</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Velocity</div>
+        <div class="stat-value">~27,600 km/h</div>
+      </div>
+    </div>
+
+    <!-- Circular mini map on the right -->
+    <div class="map-wrapper">
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Initialize map
+    const map = L.map('map', {
+      zoomControl: false,
+      attributionControl: false
+    }).setView([0, 0], 2);
+
+    // Dark Map tiles
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 18,
+    }).addTo(map);
+
+    // ISS Marker Icon
+    const issIcon = L.divIcon({
+      className: 'iss-marker',
+      html: `<div style="width: 10px; height: 10px; background: #3b82f6; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px #3b82f6; animation: pulse 2s infinite;"></div>`,
+      iconSize: [10, 10]
+    });
+
+    const marker = L.marker([0, 0], { icon: issIcon }).addTo(map);
+
+    // Add pulse animation keyframe
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @keyframes pulse {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+        70% { transform: scale(1.2); box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    async function trackISS() {
+      try {
+        const r = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
+        const data = await r.json();
+        
+        const lat = parseFloat(data.latitude);
+        const lon = parseFloat(data.longitude);
+
+        document.getElementById('latVal').textContent = `${lat.toFixed(4)}°`;
+        document.getElementById('lonVal').textContent = `${lon.toFixed(4)}°`;
+
+        const pos = [lat, lon];
+        marker.setLatLng(pos);
+        map.panTo(pos);
+      } catch (err) {
+        try {
+          const r = await fetch('http://api.open-notify.org/iss-now.json');
+          const data = await r.json();
+          const lat = parseFloat(data.iss_position.latitude);
+          const lon = parseFloat(data.iss_position.longitude);
+
+          document.getElementById('latVal').textContent = `${lat.toFixed(4)}°`;
+          document.getElementById('lonVal').textContent = `${lon.toFixed(4)}°`;
+
+          const pos = [lat, lon];
+          marker.setLatLng(pos);
+          map.panTo(pos);
+        } catch(e) {}
+      }
+    }
+
+    trackISS();
+    // Update position every 10 seconds
+    setInterval(trackISS, 10000);
+  </script>
+</body>
+</html>
