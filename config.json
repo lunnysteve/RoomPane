@@ -14,6 +14,16 @@
       "schedule": {
         "enabled": false
       }
+    },
+    {
+      "id": "p_three_display",
+      "name": "Time Weather Humidity (3D)",
+      "url": "three_display.html",
+      "time": 30,
+      "active": true,
+      "schedule": {
+        "enabled": false
+      }
     }
   ]
 }
