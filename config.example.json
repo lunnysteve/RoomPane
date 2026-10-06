@@ -17,8 +17,8 @@
     },
     {
       "id": "p_three_display",
-      "name": "Time Weather Humidity (3D)",
-      "url": "three_display.html",
+      "name": "Time Weather Humidity",
+      "url": "display.html",
       "time": 30,
       "active": true,
       "schedule": {
@@ -27,8 +27,8 @@
     },
     {
       "id": "p_three_time",
-      "name": "Time (3D)",
-      "url": "three_time.html",
+      "name": "Time",
+      "url": "time.html",
       "time": 30,
       "active": true,
       "schedule": {
@@ -37,8 +37,8 @@
     },
     {
       "id": "p_three_weather",
-      "name": "Weather (3D)",
-      "url": "three_weather.html",
+      "name": "Weather",
+      "url": "weather.html",
       "time": 30,
       "active": true,
       "schedule": {
@@ -47,8 +47,8 @@
     },
     {
       "id": "p_three_humidity",
-      "name": "Humidity (3D)",
-      "url": "three_humidity.html",
+      "name": "Humidity",
+      "url": "humidity.html",
       "time": 30,
       "active": true,
       "schedule": {
@@ -57,8 +57,8 @@
     },
     {
       "id": "p_three_sky",
-      "name": "Sky Tonight (3D)",
-      "url": "three_sky.html",
+      "name": "Sky Tonight",
+      "url": "sky.html",
       "time": 30,
       "active": true,
       "schedule": {

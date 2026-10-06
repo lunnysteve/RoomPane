@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time</title>
+  <link rel="stylesheet" href="lite.css">
+  <style>
+    main { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #time { font-size: 42vh; }
+    #secs { font-size: 10vh; color: var(--amber); font-weight: 600; margin-left: 1vw; }
+    #date { font-size: 4.4vh; margin-top: 3vh; color: var(--text); }
+    .bar { width: 52vw; height: .8vh; border-radius: .4vh; background: var(--card); margin-top: 4vh; overflow: hidden; }
+    #fill { height: 100%; width: 100%; background: var(--amber); transform-origin: left; transition: transform 1s linear; }
+    .sub { margin-top: 2vh; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="row" style="align-items:baseline"><span id="time" class="big">--:--</span><span id="secs">--</span></div>
+    <div class="label" id="date">&nbsp;</div>
+    <div class="bar"><div id="fill"></div></div>
+    <div class="sub" id="sun">&nbsp;</div>
+  </main>
+  <script src="lite.js"></script>
+  <script>
+    const { set, $ } = Lite;
+    Lite.everySecond((t) => {
+      set('time', `${t.hh}:${t.mm}`); set('secs', t.ss);
+      if (t.s === 0 || $('date').textContent.trim() === '') set('date', Lite.dateText());
+      // bar shows how far through the day we are
+      $('fill').style.transform = `scaleX(${((t.h * 3600 + t.m * 60 + t.s) / 86400).toFixed(4)})`;
+    });
+    Lite.onWeather((w) => { Lite.setKind(w.kind); set('sun', Lite.nextSun(w)); });
+  </script>
+</body>
+</html>

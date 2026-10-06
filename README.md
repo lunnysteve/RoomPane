@@ -1,7 +1,7 @@
 # home-display
 
 Smart wall display dashboard: rotating full-screen pages (time, weather, humidity,
-moon phase / sky tonight, forecast, ISS, NASA picture, countdown) plus an admin page
+moon phase, forecast, ISS, NASA picture, countdown) plus an admin page
 that picks which pages rotate and when the screen sleeps.
 
 ## Where things live
@@ -19,8 +19,8 @@ Flow: edit here -> commit -> `git push` -> `./deploy.sh` (CT 105 pulls from GitH
 
 - `index.html` - the rotator the display browser loads; `admin.html` - its control page
 - `server.js` - Express app: serves the pages, `/api` for config and uploads
-- `three_lib.js` + `three_common.css` - shared by the `three_*.html` pages; deploy them together.
-  Preview weather states with `?kind=thunder&hum=80&flash=1`.
+- `display`, `time`, `weather`, `humidity`, `sky` (`.html`) - the rotating pages. They share `lite.js` + `lite.css`
+  (plain SVG/CSS, no WebGL or CDN: the screen is a Pi 2 at 800x480). Preview with `?kind=thunder&hum=80&age=14`.
 - `weather-clock.html`, `large_*`, `forecast.html`, `iss.html`, `nasa.html`, `countdown.html` - older pages
 - `business-finder/`, `voron/` - standalone pages
 

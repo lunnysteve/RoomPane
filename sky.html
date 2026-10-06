@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sky tonight</title>
+  <link rel="stylesheet" href="lite.css">
+  <style>
+    body { --sky-top: #141b2e; }
+    main { height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 6vh 5vw; gap: 5vh; }
+    .top { display: flex; align-items: center; justify-content: center; gap: 5vw; }
+    #moon svg { height: 50vh; width: auto; display: block; }
+    #name { font-size: 9vh; font-weight: 700; line-height: 1; }
+    #lit { font-size: 4vh; color: var(--lavender); font-weight: 600; margin-top: 1.5vh; }
+    #age { margin-top: 1vh; }
+    .stars { position: fixed; inset: 0; pointer-events: none; }
+    .stars i { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff; animation: twinkle 4s ease-in-out infinite alternate; }
+    @keyframes twinkle { from { opacity: .15; } to { opacity: .7; } }
+  </style>
+</head>
+<body>
+  <div class="stars" id="stars"></div>
+  <main>
+    <div class="top">
+      <div id="moon"></div>
+      <div>
+        <div class="label">Moon tonight</div>
+        <div id="name" style="margin-top:1.5vh">--</div>
+        <div id="lit">&nbsp;</div>
+        <div class="sub" id="age">&nbsp;</div>
+      </div>
+    </div>
+    <div class="chips">
+      <div class="chip"><b id="sun">--</b><span id="sunLabel">Sunset</span></div>
+      <div class="chip"><b id="full">--</b><span>Next full moon</span></div>
+      <div class="chip"><b id="new">--</b><span>Next new moon</span></div>
+    </div>
+  </main>
+  <script src="lite.js"></script>
+  <script>
+    const { set, $ } = Lite;
+    // fixed scatter of stars (seeded so it does not jump between visits)
+    let seed = 7, html = '';
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 40; i++) html += `<i style="left:${(rnd() * 100).toFixed(1)}vw;top:${(rnd() * 60).toFixed(1)}vh;animation-delay:-${(rnd() * 4).toFixed(1)}s"></i>`;
+    $('stars').innerHTML = html;
+
+    let lastAge = -1;
+    function drawMoon() {
+      const age = Lite.moonAge(), rounded = Math.round(age * 10) / 10;
+      if (rounded !== lastAge) { $('moon').innerHTML = `<svg viewBox="0 0 100 100">${Lite.moonShape(age, 50, 50, 30)}</svg>`; lastAge = rounded; }
+      set('name', Lite.moonName(age));
+      set('lit', `${Math.round(Lite.moonLit(age) * 100)}% illuminated`);
+      set('age', `Day ${Math.floor(age) + 1} of ${Math.round(Lite.SYNODIC * 10) / 10}`);
+      set('full', Lite.shortDate(Lite.nextMoon(Lite.SYNODIC / 2)));
+      set('new', Lite.shortDate(Lite.nextMoon(0)));
+    }
+    drawMoon(); setInterval(drawMoon, 60000);
+    Lite.onWeather((w) => {
+      const t = Date.now(), up = t >= w.sunrise && t < w.sunset;
+      set('sunLabel', up ? 'Sunset' : 'Sunrise');
+      set('sun', Lite.hm(up ? w.sunset : (t < w.sunrise ? w.sunrise : w.nextSunrise)));
+    });
+  </script>
+</body>
+</html>

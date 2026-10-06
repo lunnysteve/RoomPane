@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Humidity</title>
+  <link rel="stylesheet" href="lite.css">
+  <style>
+    main { height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 6vh 5vw; gap: 5vh; }
+    .top { display: flex; align-items: center; justify-content: center; gap: 5vw; }
+    #drop svg { height: 50vh; width: auto; display: block; }
+    .num { font-size: 30vh; }
+    #word { font-size: 3.4vh; margin-top: 1vh; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <div id="drop"></div>
+      <div>
+        <div class="big num"><span id="hum">--</span><span class="unit">%</span></div>
+        <div class="label">Humidity</div>
+        <div class="sub" id="word">&nbsp;</div>
+      </div>
+    </div>
+    <div class="chips">
+      <div class="chip"><b id="dew">--</b><span>Dew point</span></div>
+      <div class="chip"><b id="temp">--</b><span>Temperature</span></div>
+      <div class="chip"><b id="pressure">--</b><span>Pressure hPa</span></div>
+    </div>
+  </main>
+  <script src="lite.js"></script>
+  <script>
+    const { set, $ } = Lite;
+    let lastHum = -1;
+    Lite.onWeather((w) => {
+      Lite.setKind(w.kind);
+      if (w.hum !== lastHum) { $('drop').innerHTML = Lite.humidityDrop(w.hum); lastHum = w.hum; }
+      set('hum', w.hum); set('word', Lite.humWord(w.hum));
+      set('dew', `${w.dew}°`); set('temp', `${w.temp}°`); set('pressure', w.pressure);
+    });
+  </script>
+</body>
+</html>

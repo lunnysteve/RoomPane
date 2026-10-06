@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time / Weather / Humidity</title>
+  <link rel="stylesheet" href="lite.css">
+  <style>
+    main { display: grid; grid-template-columns: 1.25fr 1fr 1fr; height: 100vh; padding: 6vh 3vw; gap: 2vw; }
+    .panel { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; text-align: center; }
+    .art { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; min-height: 0; }
+    .art svg { height: 32vh; width: auto; }
+    #time { font-size: 21vh; }
+    #secs { font-size: 6vh; color: var(--amber); font-weight: 600; margin-left: .4vw; }
+    .num { font-size: 17vh; }
+    .panel .label { margin-top: 2.4vh; }
+    .panel .sub { margin-top: .8vh; font-size: 2.8vh; }
+    .divider { position: absolute; top: 18vh; bottom: 18vh; width: 1px; background: rgba(255,255,255,.07); }
+  </style>
+</head>
+<body>
+  <div class="divider" style="left:38.5vw"></div>
+  <div class="divider" style="left:69.5vw"></div>
+  <main>
+    <section class="panel">
+      <div class="art col">
+        <div class="row" style="align-items:baseline"><span id="time" class="big">--:--</span><span id="secs">--</span></div>
+      </div>
+      <div class="label" id="date">&nbsp;</div>
+      <div class="sub" id="sun">&nbsp;</div>
+    </section>
+    <section class="panel">
+      <div class="art" id="icon"></div>
+      <div class="big num"><span id="temp">--</span><span class="unit">°C</span></div>
+      <div class="label" id="condition">&nbsp;</div>
+      <div class="sub" id="feels">&nbsp;</div>
+    </section>
+    <section class="panel">
+      <div class="art" id="drop"></div>
+      <div class="big num"><span id="hum">--</span><span class="unit">%</span></div>
+      <div class="label">Humidity</div>
+      <div class="sub" id="humWord">&nbsp;</div>
+    </section>
+  </main>
+  <script src="lite.js"></script>
+  <script>
+    const { set, $ } = Lite;
+    Lite.everySecond((t) => { set('time', `${t.hh}:${t.mm}`); set('secs', t.ss); if (t.s === 0 || $('date').textContent.trim() === '') set('date', Lite.dateText()); });
+    let lastKind = '', lastHum = -1;
+    Lite.onWeather((w) => {
+      Lite.setKind(w.kind);
+      if (w.kind !== lastKind) { $('icon').innerHTML = Lite.icon(w.kind); lastKind = w.kind; }
+      if (w.hum !== lastHum) { $('drop').innerHTML = Lite.humidityDrop(w.hum); lastHum = w.hum; }
+      set('temp', w.temp); set('condition', w.label); set('feels', `Feels like ${w.feels}° · ${w.lo}°/${w.hi}°`);
+      set('hum', w.hum); set('humWord', `${Lite.humWord(w.hum)} · dew point ${w.dew}°`);
+      set('sun', Lite.nextSun(w));
+    });
+  </script>
+</body>
+</html>

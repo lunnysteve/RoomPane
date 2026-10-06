@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather</title>
+  <link rel="stylesheet" href="lite.css">
+  <style>
+    main { height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 6vh 5vw; gap: 5vh; }
+    .top { display: flex; align-items: center; justify-content: center; gap: 4vw; }
+    #icon svg { height: 46vh; width: auto; display: block; }
+    .num { font-size: 30vh; }
+    #condition { font-size: 3.4vh; margin-top: 1vh; }
+    #feels { margin-top: .6vh; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="top">
+      <div id="icon"></div>
+      <div>
+        <div class="big num"><span id="temp">--</span><span class="unit">°C</span></div>
+        <div class="label" id="condition">&nbsp;</div>
+        <div class="sub" id="feels">&nbsp;</div>
+      </div>
+    </div>
+    <div class="chips">
+      <div class="chip"><b id="hilo">--</b><span>Low / High</span></div>
+      <div class="chip"><b id="rain">--</b><span>Rain chance</span></div>
+      <div class="chip"><b id="wind">--</b><span>Wind km/h</span></div>
+      <div class="chip"><b id="tmrw">--</b><span id="tmrwLabel">Tomorrow</span></div>
+    </div>
+  </main>
+  <script src="lite.js"></script>
+  <script>
+    const { set, $ } = Lite;
+    let lastKind = '';
+    Lite.onWeather((w) => {
+      Lite.setKind(w.kind);
+      if (w.kind !== lastKind) { $('icon').innerHTML = Lite.icon(w.kind); lastKind = w.kind; }
+      set('temp', w.temp); set('condition', w.label); set('feels', `Feels like ${w.feels}°`);
+      set('hilo', `${w.lo}° / ${w.hi}°`); set('rain', `${w.rain}%`); set('wind', w.wind);
+      set('tmrw', `${w.tomorrow.lo}° / ${w.tomorrow.hi}°`); set('tmrwLabel', `Tomorrow · ${w.tomorrow.label}`);
+    });
+  </script>
+</body>
+</html>
