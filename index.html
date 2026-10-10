@@ -209,11 +209,31 @@
     let rotationTimeout = null;
     let isSleeping = false;
     let pageFetchInterval = null;
+    let pluginPages = [];
+    const screenId=location.pathname.startsWith('/screen/')?decodeURIComponent(location.pathname.split('/')[2]):null;
+    const screenQuery=screenId?'?screen='+encodeURIComponent(screenId):'';
+    let pluginConnections = {};
+    let pluginSignature = '';
+    async function loadPluginStatus() {
+      try {
+        const response = await fetch('/api/plugin-status'+screenQuery, {cache:'no-store'});
+        if (!response.ok) throw Error('Plugin status unavailable');
+        const data = await response.json();
+        const connections = Object.fromEntries(data.statuses.map(plugin => [plugin.id,plugin.connected]));
+        const signature = JSON.stringify([data.pages,connections]);
+        pluginPages = data.pages; pluginConnections = connections;
+        if (signature !== pluginSignature) { pluginSignature = signature; initDisplay(); }
+      } catch {
+        const hadConnected = Object.values(pluginConnections).some(Boolean);
+        pluginConnections = {}; pluginSignature = '';
+        if (hadConnected) initDisplay();
+      }
+    }
 
     // Fetch config configuration from server
     async function loadServerConfig() {
       try {
-        const response = await fetch('/api/config');
+        const response = await fetch('/api/config'+screenQuery);
         if (!response.ok) throw new Error('API request failed');
         const data = await response.json();
         
@@ -239,8 +259,9 @@
       }
 
       const now = new Date();
-      const currentHour = now.getHours();
-      const currentDay = now.getDay(); // 0 is Sunday, 6 is Saturday
+      const parts = new Intl.DateTimeFormat('en-GB', { timeZone: settings.timezone || 'Europe/London', hour: '2-digit', weekday: 'short', hourCycle: 'h23' }).formatToParts(now);
+      const currentHour = Number(parts.find(p => p.type === 'hour').value);
+      const currentDay = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(parts.find(p => p.type === 'weekday').value);
 
       // Day check
       const days = page.schedule.days || [0,1,2,3,4,5,6];
@@ -266,7 +287,7 @@
       container.className = `viewport-container transition-${settings.transition || 'fade'}`;
 
       // Filter active pages that match schedule
-      activePages = allPages.filter(p => p.active && isPageInSchedule(p));
+      activePages = [...allPages,...pluginPages].filter(p => p.active && isPageInSchedule(p) && (!p.pluginId || !p.onlyConnected || pluginConnections[p.pluginId] === true));
 
       // Clear existing iframes
       const existingIframes = container.querySelectorAll('iframe');
@@ -344,7 +365,8 @@
 
     function checkSleepCycle() {
       const now = new Date();
-      const currentMin = now.getHours() * 60 + now.getMinutes();
+      const parts = new Intl.DateTimeFormat('en-GB', { timeZone: settings.timezone || 'Europe/London', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now);
+      const currentMin = Number(parts.find(p => p.type === 'hour').value) * 60 + Number(parts.find(p => p.type === 'minute').value);
 
       const [sH, sM] = (settings.sleepTime || '23:00').split(':').map(Number);
       const [wH, wM] = (settings.wakeTime || '07:00').split(':').map(Number);
@@ -389,6 +411,8 @@
 
     // Poll server for config updates every 30 seconds
     setInterval(loadServerConfig, 30000);
+    loadPluginStatus();
+    setInterval(loadPluginStatus, 10000);
 
     // Refresh layout when window is refocused (useful for local debug)
     window.addEventListener('focus', () => {

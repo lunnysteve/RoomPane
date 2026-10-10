@@ -1,0 +1,19 @@
+#!/bin/bash
+set -eu
+xset s off || true
+xset -dpms || true
+xset s noblank || true
+openbox &
+unclutter -idle 2 &
+until curl --fail --silent http://127.0.0.1:3000/api/health >/dev/null; do sleep 2; done
+chromium_flags=()
+model=$(tr -d '\0' < /proc/device-tree/model)
+case "$model" in
+  'Raspberry Pi 2 '*) chromium_flags+=(--disable-gpu) ;;
+esac
+while true; do
+  chromium "${chromium_flags[@]}" --kiosk --no-first-run --noerrdialogs --disable-session-crashed-bubble \
+    --disable-features=Translate --password-store=basic \
+    --user-data-dir="$HOME/.config/home-display-chromium" http://127.0.0.1:3000/ || true
+  sleep 2
+done

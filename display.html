@@ -42,7 +42,8 @@
       <div class="sub" id="humWord">&nbsp;</div>
     </section>
   </main>
-  <script src="lite.js"></script>
+  <script src="/runtime-config.js"></script>
+<script src="lite.js"></script>
   <script>
     const { set, $ } = Lite;
     Lite.everySecond((t) => { set('time', `${t.hh}:${t.mm}`); set('secs', t.ss); if (t.s === 0 || $('date').textContent.trim() === '') set('date', Lite.dateText()); });

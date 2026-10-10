@@ -1,41 +1,64 @@
-# home-display
+# Home Display
 
-Smart wall display dashboard: rotating full-screen pages (time, weather, humidity,
-moon phase, forecast, ISS, NASA picture, countdown) plus an admin page
-that picks which pages rotate and when the screen sleeps.
+A self-hosted home dashboard with a visual page designer, custom HTML pages,
+single-page home plugins and multiple screen profiles. Run the server on a
+Raspberry Pi, then open its screen URLs on other Pis, browsers or Android TVs.
 
-## Where things live
+## Features
 
-- **Source of truth:** this folder, `C:\Users\slunn\Projects\home-display`
-- **GitHub:** `lunnysteve/home-display` (private), branch `main`
-- **Live:** pve2 (192.168.0.200) LXC 105, http://192.168.0.21/
-  - `/usr/share/caddy` is a git checkout of `main` (read-only deploy key
-    `/root/.ssh/github_display`, ssh alias `github-display`)
-  - Caddy on :80 reverse-proxies to the Node app on :3000 (`server.js`, pm2 app `home-display`)
+- Clock, weather, text, image, video and icon blocks with colours and animation.
+- Bundled and uploaded fonts, image/animation uploads, and an HTML editor.
+- Mainsail/Moonraker printer plugin with connection-based page visibility.
+- Custom single HTML plugin pages and a small source-data API.
+- Independent screen playlists and visible endpoint URLs.
+- Versioned GitHub releases, update checks and application rollback.
+- Android TV viewer and screensaver APK.
 
-Flow: edit here -> commit -> `git push` -> `./deploy.sh` (CT 105 pulls from GitHub).
+## Install on a Pi
 
-## Files
-
-- `index.html` - the rotator the display browser loads; `admin.html` - its control page
-- `server.js` - Express app: serves the pages, `/api` for config and uploads
-- `display`, `time`, `weather`, `humidity`, `sky` (`.html`) - the rotating pages. They share `lite.js` + `lite.css`
-  (plain SVG/CSS, no WebGL or CDN: the screen is a Pi 2 at 800x480). Preview with `?kind=thunder&hum=80&age=14`.
-- `weather-clock.html`, `large_*`, `forecast.html`, `iss.html`, `nasa.html`, `countdown.html` - older pages
-- `business-finder/`, `voron/` - standalone pages
-
-## Runtime state (not in git)
-
-- `config.json` - page rotation and sleep/wake times, written by the admin page.
-  `config.example.json` is a snapshot; copy it to `config.json` to start fresh.
-- Files uploaded through the admin page land in the app folder and stay untracked.
-
-## Deploy
+Use a fresh Raspberry Pi OS Lite card (Bookworm or newer), configure Wi-Fi and
+SSH in Raspberry Pi Imager, then copy or clone the project and run:
 
 ```sh
-./deploy.sh          # pull latest main on CT 105; npm ci + pm2 restart only if server/deps changed
-./deploy.sh status   # live commit, git status, pm2 state
-./deploy.sh logs     # recent pm2 logs
+sudo bash install.sh
+sudo reboot
 ```
 
-The pull is `--ff-only`, so it refuses if someone edited tracked files on the live box.
+Open `http://YOUR-PI:3000/admin` and log in as `admin` with the password chosen
+during installation. The default display is `http://YOUR-PI:3000/`. Screen
+profiles have URLs such as `http://YOUR-PI:3000/screen/living-room`.
+
+Full setup and the Pi 2 DSI workaround: [INSTALL.md](INSTALL.md).
+Use `--server-only` when hosting the server without the Pi kiosk.
+
+## Screens, plugins and updates
+
+Open **Screens & updates** to create screen profiles, copy their URLs and check
+releases. Runtime state stays separate from application files and is preserved
+across updates. This repository currently remains private; configure a read-only
+GitHub token on the server to check and download private releases.
+
+- [Plugin API and starter page](PLUGINS.md)
+- [Release/versioning and private GitHub access](RELEASING.md)
+- [Android TV setup and APK builds](android-tv/README.md)
+- [Changelog](CHANGELOG.md)
+
+The TV APK supports viewing on app launch and a system screensaver service.
+Screensaver support depends on the TV firmware; device testing is still needed.
+
+## Development
+
+```sh
+npm ci
+npm test
+npm start
+```
+
+Node 22 is required for the supported server installation. Browser integration
+checks use Python with Playwright and Pillow; run `python tests/designer-browser.py`.
+Updater replacement/rollback checks use `python tests/updater-rollback.py`.
+
+Keep the admin interface on a trusted LAN or put it behind HTTPS. Uploaded HTML
+and plugins are trusted owner code. Installable web-app support needs trusted
+HTTPS for phone installation. Runtime settings, uploaded content, source keys,
+GitHub tokens and Android signing keys are excluded from releases.

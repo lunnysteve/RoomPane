@@ -1,0 +1,28 @@
+# Home Display direct Wayland test
+[Unit]
+Description=Home Display direct Wayland kiosk trial
+After=systemd-user-sessions.service dbus.socket systemd-logind.service home-display.service
+Wants=dbus.socket systemd-logind.service home-display.service
+Conflicts=lightdm.service getty@tty7.service
+ConditionPathExists=/dev/tty0
+
+[Service]
+Type=simple
+User=display-kiosk
+PAMName=home-display-kiosk
+Environment=LIBSEAT_BACKEND=logind
+Environment=WLR_BACKENDS=drm
+Environment=WLR_RENDERER=pixman
+ExecStart=/usr/bin/cage -- /usr/local/bin/home-display-wayland-browser
+ExecStartPost=+/usr/bin/chvt 7
+Restart=on-failure
+RestartSec=3
+TTYPath=/dev/tty7
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty-fail
+StandardOutput=journal
+StandardError=journal
+UtmpIdentifier=tty7
+UtmpMode=user

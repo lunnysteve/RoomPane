@@ -231,9 +231,10 @@
     </div>
   </div>
 
-  <script>
-    const LAT = 51.4185;
-    const LON = -0.9530;
+  <script src="/runtime-config.js"></script>
+    <script>
+    const LAT = window.DISPLAY_SETTINGS.latitude;
+    const LON = window.DISPLAY_SETTINGS.longitude;
     const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     const ICONS = {
@@ -309,7 +310,7 @@
 
     async function fetchWeather() {
       try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=5&timezone=Europe%2FLondon`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=5&timezone=${encodeURIComponent(window.DISPLAY_SETTINGS.timezone)}`;
         const r = await fetch(url);
         const data = await r.json();
         

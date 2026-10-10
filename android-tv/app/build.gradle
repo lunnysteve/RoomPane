@@ -1,0 +1,26 @@
+plugins { id 'com.android.application' }
+def releaseVersion = new groovy.json.JsonSlurper().parse(file('../../package.json')).version
+def releaseParts = releaseVersion.tokenize('.').collect { it.toInteger() }
+android {
+    namespace 'io.github.lunnysteve.homedisplay'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'io.github.lunnysteve.homedisplay'
+        minSdk 23
+        targetSdk 35
+        versionCode releaseParts[0] * 1000000 + releaseParts[1] * 1000 + releaseParts[2]
+        versionName releaseVersion
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    signingConfigs {
+        release {
+            if (System.getenv('HD_TV_KEYSTORE')) {
+                storeFile file(System.getenv('HD_TV_KEYSTORE'))
+                storePassword System.getenv('HD_TV_STORE_PASSWORD')
+                keyAlias 'home-display'
+                keyPassword System.getenv('HD_TV_STORE_PASSWORD')
+            }
+        }
+    }
+    buildTypes { release { if (System.getenv('HD_TV_KEYSTORE')) signingConfig signingConfigs.release } }
+}

@@ -1,0 +1,1 @@
+<dream xmlns:android="http://schemas.android.com/apk/res/android" android:settingsActivity="io.github.lunnysteve.homedisplay.SettingsActivity" android:previewImage="@drawable/banner"/>

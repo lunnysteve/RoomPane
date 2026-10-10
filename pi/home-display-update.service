@@ -1,0 +1,10 @@
+[Unit]
+Description=Install a verified Home Display GitHub release
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/home-display/environment
+ExecStart=/usr/bin/python3 /usr/local/lib/home-display/fetch-release.py
+TimeoutStartSec=15min
+UMask=0027

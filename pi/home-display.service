@@ -1,0 +1,21 @@
+[Unit]
+Description=Home Display dashboard server
+After=network.target
+
+[Service]
+Type=simple
+User=home-display
+Group=home-display
+WorkingDirectory=/opt/home-display/app
+EnvironmentFile=/etc/home-display/environment
+ExecStart=/opt/home-display/node/bin/node /opt/home-display/app/server.js
+Restart=on-failure
+RestartSec=3
+UMask=0027
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/home-display
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

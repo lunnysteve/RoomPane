@@ -3,3 +3,5 @@
 *.jpg binary
 *.gif binary
 *.mp4 binary
+*.sh text eol=lf
+pi/* text eol=lf

@@ -10,7 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&family=JetBrains+Mono:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <script>
+  <script src="/runtime-config.js"></script>
+    <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -184,13 +185,14 @@
 
   </main>
 
-  <script>
+  <script src="/runtime-config.js"></script>
+    <script>
     // State management
     const state = {
       is24Hour: true,
       isCelsius: true,
-      latitude: 51.428,
-      longitude: -0.932,
+      latitude: window.DISPLAY_SETTINGS.latitude,
+      longitude: window.DISPLAY_SETTINGS.longitude,
       weatherData: null,
       isDaytime: true
     };
@@ -447,7 +449,7 @@
     // Fetch Lower Earley Weather Telemetry
     async function fetchLowerEarleyWeather() {
       try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${state.latitude}&longitude=${state.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code&timezone=Europe%2FLondon`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${state.latitude}&longitude=${state.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code&timezone=${encodeURIComponent(window.DISPLAY_SETTINGS.timezone)}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Station unreachable');
         const data = await res.json();

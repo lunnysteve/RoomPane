@@ -1,0 +1,21 @@
+@font-face{font-family:'Studio Sans';src:url('/studio-sans.ttf') format('truetype');font-display:swap}
+@font-face{font-family:'Studio Serif';src:url('/studio-serif.ttf') format('truetype');font-display:swap}
+@font-face{font-family:'Studio Mono';src:url('/studio-mono.ttf') format('truetype');font-display:swap}
+@font-face{font-family:'Studio Heavy';src:url('/studio-heavy.ttf') format('truetype');font-display:swap}
+@font-face{font-family:'Studio Serif Bold';src:url('/studio-serif-bold.ttf') format('truetype');font-display:swap}
+@font-face{font-family:'Studio Mono Italic';src:url('/studio-mono-italic.ttf') format('truetype');font-display:swap}
+.design-content{display:inline-block;max-width:100%;max-height:100%;pointer-events:none;transform-origin:center}
+img.design-content,video.design-content{width:100%;height:100%;object-fit:contain}
+.design-content svg{display:block;width:1em;height:1em;max-width:100%;max-height:100%}
+.motion-pulse{animation:design-pulse 4s ease-in-out infinite}
+.motion-float{animation:design-float 4s ease-in-out infinite}
+.motion-spin{animation:design-spin 8s linear infinite}
+.motion-bounce{animation:design-bounce 4s ease-in-out infinite}
+.motion-fade{animation:design-fade 4s ease-in-out infinite}
+.block.selected .design-content{animation-play-state:paused}
+@keyframes design-pulse{0%,100%{transform:scale(.88)}50%{transform:scale(1)}}
+@keyframes design-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes design-spin{to{transform:rotate(360deg)}}
+@keyframes design-bounce{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}60%{transform:translateY(0)}80%{transform:translateY(-6px)}}
+@keyframes design-fade{0%,100%{opacity:.35}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.design-content{animation:none!important}}

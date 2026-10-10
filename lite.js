@@ -2,8 +2,10 @@
 // Plain script, no dependencies: the Pi 2 kiosk cannot run WebGL and a failed CDN import blanked every page.
 // Preview overrides: ?kind=thunder&hum=80&age=14 (moon age in days).
 (function () {
-  const LAT = 51.4185, LON = -0.9530, TZ = 'Europe/London';
-  const CACHE_KEY = 'lite-weather', FRESH_MS = 10 * 60 * 1000, RETRY_MS = 2 * 60 * 1000;
+  const settings = window.DISPLAY_SETTINGS || {};
+  const LAT = settings.latitude ?? 51.4185, LON = settings.longitude ?? -0.9530, TZ = settings.timezone || 'Europe/London';
+  const CACHE_KEY = `lite-weather:${LAT}:${LON}:${TZ}:${settings.units || 'celsius'}`, FRESH_MS = 10 * 60 * 1000, RETRY_MS = 2 * 60 * 1000;
+  if (settings.units === 'fahrenheit') document.querySelectorAll('.unit').forEach(el => { if (el.textContent === '°C') el.textContent = '°F'; });
   const query = new URLSearchParams(location.search);
   const $ = (id) => document.getElementById(id);
   const set = (id, v) => { const el = $(id); if (el && el.textContent !== String(v)) el.textContent = v; };
@@ -47,7 +49,7 @@
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
       '&current=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,wind_speed_10m,pressure_msl,weather_code,is_day' +
       '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&forecast_days=2' +
-      `&timezone=${encodeURIComponent(TZ)}&timeformat=unixtime`;
+      `&timezone=${encodeURIComponent(TZ)}&timeformat=unixtime&temperature_unit=${settings.units === 'fahrenheit' ? 'fahrenheit' : 'celsius'}`;
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const j = await res.json(), c = j.current, d = j.daily, info = describe(c.weather_code, c.is_day === 1);

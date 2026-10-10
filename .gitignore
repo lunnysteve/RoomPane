@@ -6,3 +6,16 @@ deploy.ps1
 
 # Runtime state written by the admin page (see config.example.json)
 config.json
+
+content/
+tests/designer-preview.png
+.local/
+dist/
+android-tv/.gradle/
+android-tv/**/build/
+android-tv/local.properties
+**/__pycache__/
+plugins.json
+screens.json
+github-token.json
+update-status.json

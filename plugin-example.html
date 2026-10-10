@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My home plugin</title><style>body{margin:0;background:#102820;color:#f0f5e9;font-family:system-ui;padding:30px}h1{font-size:42px}pre{font-size:20px;white-space:pre-wrap}</style></head><body><h1 id="name">My home plugin</h1><p id="status">Connecting…</p><pre id="data"></pre><script>
+// The dashboard supplies ?plugin=ID. Fetch only this plugin's cached source data.
+const id=new URLSearchParams(location.search).get('plugin');
+async function update(){try{const r=await fetch('/api/plugin-data/'+encodeURIComponent(id));if(!r.ok)throw Error();const plugin=await r.json();document.getElementById('name').textContent=plugin.name;document.getElementById('status').textContent=plugin.connected?'Connected':'Offline';document.getElementById('data').textContent=JSON.stringify(plugin.data,null,2);}catch{document.getElementById('status').textContent='Offline';}}
+update();setInterval(update,10000);
+</script></body></html>

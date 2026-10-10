@@ -1,0 +1,1 @@
+home-display ALL=(root) NOPASSWD: /usr/local/sbin/home-display-control restart_browser, /usr/local/sbin/home-display-control reboot_pi, /usr/local/sbin/home-display-control install_update

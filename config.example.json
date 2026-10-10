@@ -2,19 +2,12 @@
   "settings": {
     "sleepTime": "23:00",
     "wakeTime": "07:00",
-    "transition": "fade"
+    "transition": "fade",
+    "latitude": 51.4185,
+    "longitude": -0.953,
+    "timezone": "Europe/London"
   },
   "pages": [
-    {
-      "id": "p_1788287857110",
-      "name": "all things",
-      "url": "weather-clock.html",
-      "time": 30,
-      "active": false,
-      "schedule": {
-        "enabled": false
-      }
-    },
     {
       "id": "p_three_display",
       "name": "Time Weather Humidity",

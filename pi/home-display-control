@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+case "${1:-}" in
+  restart_browser) exec /usr/bin/systemctl restart lightdm.service ;;
+  reboot_pi) exec /usr/bin/systemctl reboot ;;
+    install_update) exec /usr/bin/systemctl start --no-block home-display-update.service ;;
+  *) echo 'Invalid display action.' >&2; exit 2 ;;
+esac

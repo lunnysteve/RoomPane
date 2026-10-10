@@ -639,6 +639,18 @@
         <div class="form-group">
           <label>Kiosk Wake Time</label>
           <input type="time" id="settingWakeTime" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="settingLatitude">Weather latitude</label>
+                    <input type="number" id="settingLatitude" class="form-control" min="-90" max="90" step="any">
+                </div>
+                <div class="form-group">
+                    <label for="settingLongitude">Weather longitude</label>
+                    <input type="number" id="settingLongitude" class="form-control" min="-180" max="180" step="any">
+                </div>
+                <div class="form-group">
+                    <label for="settingTimezone">Timezone</label>
+                    <input type="text" id="settingTimezone" class="form-control" placeholder="Europe/London">
         </div>
       </div>
 
@@ -793,6 +805,9 @@
       document.getElementById('settingTransition').value = config.settings.transition || 'fade';
       document.getElementById('settingSleepTime').value = config.settings.sleepTime || '23:00';
       document.getElementById('settingWakeTime').value = config.settings.wakeTime || '07:00';
+                document.getElementById('settingLatitude').value = config.settings.latitude ?? 51.4185;
+                document.getElementById('settingLongitude').value = config.settings.longitude ?? -0.953;
+                document.getElementById('settingTimezone').value = config.settings.timezone || 'Europe/London';
 
       // Diagnose sidebar
       document.getElementById('diagTotalPages').innerText = config.pages.length;
@@ -1012,6 +1027,15 @@
       config.settings.transition = document.getElementById('settingTransition').value;
       config.settings.sleepTime = document.getElementById('settingSleepTime').value;
       config.settings.wakeTime = document.getElementById('settingWakeTime').value;
+      const latitude = document.getElementById('settingLatitude');
+      const longitude = document.getElementById('settingLongitude');
+      if (!latitude.value.trim() || !longitude.value.trim() || !latitude.checkValidity() || !longitude.checkValidity()) {
+        alert('Enter a latitude from -90 to 90 and a longitude from -180 to 180.');
+        return;
+      }
+      config.settings.latitude = Number(latitude.value);
+      config.settings.longitude = Number(longitude.value);
+      config.settings.timezone = document.getElementById('settingTimezone').value.trim();
 
       try {
         const response = await fetch('/api/config', {
@@ -1024,7 +1048,8 @@
           alert('Configuration saved successfully to server!');
           fetchConfig();
         } else {
-          alert('Error saving configuration.');
+          const error = await response.json();
+          alert(error.error || 'Error saving configuration.');
         }
       } catch (err) {
         alert('Failed to connect to server API.');
