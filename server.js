@@ -3,6 +3,8 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const os = require('os');
+const QRCode = require('qrcode-svg');
 const { pagesError } = require('./design-validation.js');
 const { verifyPassword } = require('./password.js');
 const appFiles = require('./app-files.json');
@@ -105,6 +107,18 @@ app.post('/api/config', (req, res) => {
   writeConfig(current);
   res.json({ success: true, config: current });
 });
+// Addresses other devices on the network can use; hostname.local works where avahi/mDNS is running.
+function networkAddresses() {
+  const hosts = [os.hostname().toLowerCase() + '.local'];
+  for (const entries of Object.values(os.networkInterfaces())) for (const entry of entries || []) if (entry.family === 'IPv4' && !entry.internal) hosts.push(entry.address);
+  return hosts.map(host => 'http://' + host + (String(PORT) === '80' ? '' : ':' + PORT));
+}
+app.get('/api/device', (req, res) => res.set('Cache-Control', 'no-store').json({ addresses: networkAddresses(), controls: process.env.HOME_DISPLAY_CONTROL === 'local', manualSleep: manualSleepState }));
+app.get('/api/qr.svg', (req, res) => {
+  const text = req.query.text;
+  if (typeof text !== 'string' || !/^https?:\/\//.test(text) || text.length > 300) return res.status(400).json({ error: 'Invalid address.' });
+  res.type('image/svg+xml').send(new QRCode({ content: text, padding: 2, width: 220, height: 220, ecl: 'M', join: true, container: 'svg-viewbox' }).svg());
+});
 app.post('/api/display/sleep', (req, res) => { manualSleepState = Boolean(req.body.sleep); res.json({ success: true, manualSleep: manualSleepState }); });
 app.post('/api/pi/control', (req, res) => {
   const action = req.body.action;
@@ -131,7 +145,10 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
   res.json({ success: true, filename: req.file.filename });
 });
-app.get('/api/files', (req, res) => res.json({ files: [...new Set([...editableAssets, ...fs.readdirSync(CONTENT_DIR).filter(validName)])].sort() }));
+app.get('/api/files', (req, res) => {
+  const uploads = fs.readdirSync(CONTENT_DIR).filter(validName).sort();
+  res.json({ files: [...new Set([...editableAssets, ...uploads])].sort(), uploads });
+});
 app.get('/api/file-content', (req, res) => {
   const name = req.query.filename;
   if (!validName(name)) return res.status(400).json({ error: 'Invalid filename.' });
@@ -153,8 +170,7 @@ app.delete('/api/files/:filename', (req, res) => {
   fs.unlinkSync(target);
   res.json({ success: true });
 });
-app.get('/admin', authorized, (req, res) => res.sendFile(path.join(__dirname, 'designer.html')));
-app.get(['/admin.html', '/designer.html'], authorized, (req, res) => res.sendFile(path.join(__dirname, req.path.slice(1))));
+app.get(['/admin', '/studio.html'], authorized, (req, res) => res.sendFile(path.join(__dirname, 'studio.html')));
 app.get('/manifest.webmanifest', (req, res) => res.type('application/manifest+json').sendFile(path.join(__dirname, 'manifest.webmanifest')));
 app.get('/app-icon.svg', (req, res) => res.sendFile(path.join(__dirname, 'app-icon.svg')));
 app.get(['/app-icon-192.png', '/app-icon-512.png'], (req, res) => res.sendFile(path.join(__dirname, req.path.slice(1))));
@@ -162,7 +178,7 @@ app.get(['/studio-sans.ttf', '/studio-serif.ttf', '/studio-mono.ttf', '/studio-h
 app.use(express.static(CONTENT_DIR, { dotfiles: 'deny', index: false }));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/screen/:id',(req,res)=>{if(!screens.find(req.params.id))return res.status(404).send('Screen not found.');res.sendFile(path.join(__dirname,'index.html'));});
-for (const asset of assets.filter(name => !['admin.html', 'designer.html'].includes(name))) app.get('/' + asset, (req, res) => res.sendFile(path.join(__dirname, asset)));
+for (const asset of assets.filter(name => name !== 'studio.html')) app.get('/' + asset, (req, res) => res.sendFile(path.join(__dirname, asset)));
 app.use((err, req, res, next) => {
   console.error(err.message);
   res.status(err instanceof multer.MulterError || /filename/.test(err.message) ? 400 : 500).json({ error: err instanceof multer.MulterError || /filename/.test(err.message) ? err.message : 'Request failed.' });

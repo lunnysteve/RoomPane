@@ -69,7 +69,7 @@ test('standalone admin access, content safety and persistence', async () => {
     await start();
     assert.equal((await fetch(base + '/')).status, 200);
     assert.equal((await fetch(base + '/api/config')).status, 200);
-    for (const url of ['/admin', '/admin.html', '/designer.html', '/api/plugins', '/api/files', '/api/file-content?filename=weather.html']) assert.equal((await fetch(base + url)).status, 401);
+    for (const url of ['/admin', '/studio.html', '/api/plugins', '/api/device', '/api/qr.svg?text=http://a', '/api/files', '/api/file-content?filename=weather.html']) assert.equal((await fetch(base + url)).status, 401);
     assert.equal((await fetch(base + '/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 401);
     assert.equal((await fetch(base + '/admin', { headers: { Authorization: auth } })).status, 200);
     assert.equal((await fetch(base + '/admin', { headers: { Authorization: 'Basic ' + Buffer.from('admin:wrong').toString('base64') } })).status, 401);
@@ -105,7 +105,7 @@ test('standalone admin access, content safety and persistence', async () => {
     assert.equal((await request('/api/config', {settings:{units:'invalid'}})).status, 400);
     assert.equal((await fetch(base + '/manifest.webmanifest')).status, 200);
     assert.equal((await fetch(base + '/design-display.html?id=design_test')).status, 200);
-    for (const filename of ['designer.html', 'designer.js', 'design-display.js', 'sw.js']) assert.equal((await request('/api/edit', {filename,content:'bad'})).status, 400);
+    for (const filename of ['studio.html', 'studio.js', 'design-display.js', 'sw.js', 'app-files.json']) assert.equal((await request('/api/edit', {filename,content:'bad'})).status, 400);
     assert.equal((await request('/api/edit', { filename: 'server.js', content: 'bad' })).status, 400);
     assert.equal((await request('/api/edit', { filename: '../outside.html', content: 'bad' })).status, 400);
     assert.equal((await request('/api/edit', { filename: 'weather.html', content: '<h1>Custom weather</h1>' })).status, 200);
@@ -122,7 +122,7 @@ test('standalone admin access, content safety and persistence', async () => {
     assert.equal((await (await fetch(base + '/api/upload?replace=1', { method: 'POST', headers: { Authorization: auth }, body: replacement })).json()).filename, 'uploaded-2.html');
     assert.match(fs.readFileSync(path.join(data, 'content', 'uploaded-2.html'), 'utf8'), /Replaced page/);
     const rejected = new FormData();
-    rejected.append('file', new Blob(['bad']), 'admin.html');
+    rejected.append('file', new Blob(['bad']), 'studio.html');
     assert.equal((await fetch(base + '/api/upload', { method: 'POST', headers: { Authorization: auth }, body: rejected })).status, 400);
     await stop();
     await start();
@@ -131,7 +131,16 @@ test('standalone admin access, content safety and persistence', async () => {
     assert.deepEqual(persisted.pages[0].design, designedPage.design);
     assert.match(await (await fetch(base + '/uploaded.html')).text(), /Uploaded page/);
     assert.match(await (await fetch(base + '/weather.html')).text(), /Custom weather/);
-    assert.equal((await fetch(base + '/api/files', { headers: { Authorization: auth } })).status, 200);
+    const files = await (await fetch(base + '/api/files', { headers: { Authorization: auth } })).json();
+    assert.ok(files.files.includes('sky.html') && files.files.includes('uploaded.html'));
+    assert.deepEqual(files.uploads, ['uploaded-2.html', 'uploaded.html', 'weather.html']);
+    const device = await (await fetch(base + '/api/device', { headers: { Authorization: auth } })).json();
+    assert.equal(device.controls, false);
+    assert.match(device.addresses[0], /^http:\/\/.+\.local:\d+$/);
+    const qr = await fetch(base + '/api/qr.svg?text=' + encodeURIComponent(device.addresses[0]), { headers: { Authorization: auth } });
+    assert.match(qr.headers.get('content-type'), /svg/);
+    assert.match(await qr.text(), /<svg/);
+    assert.equal((await fetch(base + '/api/qr.svg?text=javascript:alert(1)', { headers: { Authorization: auth } })).status, 400);
     assert.equal((await fetch(base + '/api/files/weather.html', { method: 'DELETE', headers: { Authorization: auth } })).status, 200);
     assert.match(await (await fetch(base + '/weather.html')).text(), /lite.js/);
     assert.equal((await request('/api/pi/control', { action: 'reboot_pi; echo bad' })).status, 400);

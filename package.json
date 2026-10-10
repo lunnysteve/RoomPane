@@ -14,7 +14,8 @@
   "dependencies": {
     "express": "^5.2.1",
     "multer": "^2.2.0",
-    "node-ical": "^0.27.3"
+    "node-ical": "^0.27.3",
+    "qrcode-svg": "^1.1.0"
   },
   "engines": {
     "node": ">=22"
