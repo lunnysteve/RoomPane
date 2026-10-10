@@ -1,7 +1,7 @@
 # Releases and updates
 
 Versions use `MAJOR.MINOR.PATCH`, with matching Git tags such as `v1.1.0`.
-The GitHub release workflow runs server tests, builds the signed Android TV APK,
+The GitHub release workflow requires the server, backup/restore, updater, packaged-install and four browser suites to pass, then builds the signed Android TV APK,
 and publishes the app archive, APK and `SHA256SUMS` on a tag push.
 
 To prepare a release, update `package.json` and its lock file with
@@ -46,3 +46,9 @@ Keep the local TV signing key backed up. GitHub Actions needs secrets
 same key so subsequent APKs can replace an installed version. Keys and passwords
 are excluded from the repository. Android APK installation remains a device action;
 the Pi update button updates the server application, not TV installations.
+
+## Updater helper migration (1.3.0 and later)
+
+The updated privileged helper installs the new release's updater script, control helper, sudoers rule and update unit, validates sudoers before replacement, and restores both application and helpers if installation or the health check fails. Previous versions of the privileged helper only replaced the application. Existing installations need a one-time run of `sudo bash ~/home-display/pi/update-studio.sh` from an up-to-date checkout to install the new helper. The Studio bootstrap now also updates bundled display pages and restores system helpers on failure.
+
+`Checks` runs on main and pull requests and is a required dependency of the release job. It verifies a fresh extracted package, but cannot prove a fresh SD-card installation or Android TV screensaver behavior. Test those on the target hardware before advertising them as verified.

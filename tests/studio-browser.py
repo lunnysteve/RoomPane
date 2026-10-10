@@ -23,6 +23,11 @@ with tempfile.TemporaryDirectory(prefix='studio-browser-') as data:
             card=lambda name:page.locator('.page-card').filter(has=page.get_by_text(name,exact=True))
             assert page.locator('.page-card').count()==len(names)
             assert page.locator('#save').is_hidden()
+            page.locator('#add-page').click();page.locator('#add-page-url').fill('http://');page.locator('#add-page-confirm').click()
+            assert page.locator('#add-page-form').is_visible()
+            assert page.locator('.page-card').count()==len(names)
+            assert 'valid' in page.locator('#status').inner_text()
+            page.locator('#add-page-cancel').click()
             # Add a ready-made page that was not in the default rotation.
             page.locator('#add-page').click();page.locator('#add-page-file').select_option('countdown.html');page.locator('#add-page-confirm').click()
             assert page.locator('.page-card').count()==len(names)+1
@@ -76,6 +81,16 @@ with tempfile.TemporaryDirectory(prefix='studio-browser-') as data:
             for section in ['Pages','Screens','Plugins','Settings','Updates']:
                 page.get_by_role('button',name=section,exact=True).click();page.wait_for_timeout(150)
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),section
+            page.get_by_role('button',name='Settings',exact=True).click()
+            page.locator('#backup-password').fill('test-backup-password')
+            with page.expect_download() as downloading: page.locator('#backup-export').click()
+            backup_path=str(Path(data)/'saved.hdbackup');downloading.value.save_as(backup_path)
+            page.locator('#latitude').fill('41');page.locator('#save').click()
+            page.wait_for_function("document.getElementById('status').textContent.startsWith('Saved')")
+            page.locator('#backup-password').fill('test-backup-password');page.locator('#backup-file').set_input_files(backup_path)
+            page.locator('#backup-restore').click()
+            page.wait_for_function("document.getElementById('status').textContent.startsWith('Ready')")
+            assert config()['settings']['latitude']==40
             assert not errors,errors;browser.close()
             print('PASS: add page, drag and keyboard reorder, toggles, schedules, save bar and discard, files, QR address and screen controls')
     finally:process.terminate();process.wait(timeout=10)

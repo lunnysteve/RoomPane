@@ -30,7 +30,19 @@ function designError(d, uploadedFonts) {
 
 function pagesError(pages, uploadedFonts) {
   if (!Array.isArray(pages) || pages.some(p => !p || typeof p.url !== 'string' || typeof p.name !== 'string' || typeof p.id !== 'string' || !Number.isFinite(p.time) || p.time < 5)) return 'Invalid pages.';
+  const ids = new Set();
   for (const page of pages) {
+    if (!page.id || ids.has(page.id)) return 'Pages must have unique IDs.';
+    ids.add(page.id);
+    try {
+      const url = new URL(page.url, 'http://display.local/');
+      if (!page.url.trim() || !['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw Error();
+    } catch { return 'Use a valid page filename or HTTP(S) address without inline credentials.'; }
+    if (page.schedule?.enabled) {
+      const {days, startHour, endHour} = page.schedule;
+      if (!Array.isArray(days) || days.some(day => !Number.isInteger(day) || day < 0 || day > 6)
+        || [startHour, endHour].some(hour => !Number.isInteger(hour) || hour < 0 || hour > 23)) return 'Invalid page schedule.';
+    }
     const error = page.design && designError(page.design, uploadedFonts);
     if (error) return error;
   }

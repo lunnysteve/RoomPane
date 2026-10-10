@@ -22,6 +22,8 @@ Home Display turns a Raspberry Pi and a small screen into a rotating dashboard f
 - **Visual page designer.** Drag clock, weather, text, image, icon, video and plugin blocks onto an 800 × 480 canvas. Choose colours, bundled or uploaded fonts and simple animations.
 - **HTML editor.** Edit any page's HTML, CSS and JavaScript and preview a draft before you save it.
 - **Multiple screens.** One server can drive several displays. Each screen has its own playlist and its own URL.
+- **Independent screen schedules.** Each display can have its own sleep times and persistent on/off control.
+- **Encrypted backups.** Download and restore settings, designs, media, fonts and plugin connections from Studio. Browser backups support libraries up to 50 MB; a full Pi backup procedure covers larger libraries.
 - **Home integrations.** Show Klipper/Moonraker printer status, Home Assistant entities, photo slideshows and Google Calendar or iCal agendas. Integrations that are offline can be hidden automatically.
 - **Community plugins.** Install a plugin as a JSON definition and an HTML renderer. Credentials stay on the server.
 - **Sleep schedule.** The screen blanks at night and wakes in the morning.

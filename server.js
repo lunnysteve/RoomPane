@@ -24,7 +24,6 @@ const protectedAssets = [...appFiles.server, ...appFiles.studio];
 const editableAssets = assets.filter(name => !protectedAssets.includes(name));
 fs.mkdirSync(CONTENT_DIR, { recursive: true });
 if (!fs.existsSync(CONFIG_FILE)) fs.copyFileSync(path.join(__dirname, 'config.example.json'), CONFIG_FILE);
-let manualSleepState = false;
 const plugins = createPlugins(DATA_DIR, CONTENT_DIR);
 const screens = createScreens(DATA_DIR),updates = createUpdates(DATA_DIR);
 const fontFiles=()=>fs.readdirSync(CONTENT_DIR).filter(name=>/^font-[a-zA-Z0-9._-]+\.(ttf|otf|woff|woff2)$/.test(name));
@@ -57,7 +56,7 @@ app.use((req, res, next) => {
   next();
 });
 app.get('/api/health', (req, res) => res.json({ ok: true }));
-app.get('/api/config', (req, res) => {const config=readConfig();if(req.query.screen){const screen=screens.find(req.query.screen);if(!screen)return res.status(404).json({error:'Screen not found.'});if(screen.pageIds!==null)config.pages=config.pages.filter(p=>screen.pageIds.includes(p.id));config.screen=screen;}res.set('Cache-Control','no-store').json({ ...config, manualSleep: manualSleepState });});
+app.get('/api/config', (req, res) => {const config=readConfig();if(req.query.screen){const screen=screens.find(req.query.screen);if(!screen)return res.status(404).json({error:'Screen not found.'});if(screen.pageIds!==null)config.pages=config.pages.filter(p=>screen.pageIds.includes(p.id));config.screen=screen;if(screen.schedule)config.settings={...config.settings,...screen.schedule};}res.set('Cache-Control','no-store').json({ ...config, manualSleep: screens.sleep(req.query.screen) });});
 app.get('/api/screens',(req,res)=>res.json({screens:screens.read().map(s=>({...s,path:'/screen/'+s.id})),defaultPath:'/',adminPath:'/admin'}));
 app.get('/api/version',(req,res)=>res.json({version:updates.version}));
 app.get('/api/fonts',(req,res)=>res.json({fonts:fontFiles().map(name=>({key:'uploaded:'+name,name:name.replace(/^font-[a-f0-9]+-/,'').replace(/\.[^.]+$/,''),url:'/'+name}))}));
@@ -69,6 +68,18 @@ app.get('/runtime-config.js', (req, res) => {
     res.set('Cache-Control', 'no-store').type('js').send('window.DISPLAY_SETTINGS=' + JSON.stringify({ latitude: settings.latitude ?? 51.4185, longitude: settings.longitude ?? -0.953, timezone: settings.timezone || 'Europe/London', units: settings.units || 'celsius' }).replace(/</g, '\\u003c') + ';');
 });
 app.use('/api', authorized);
+
+const backups = require('./backups')(DATA_DIR, validName, () => plugins.resetCache());
+const restoreUpload = multer({storage:multer.memoryStorage(),limits:{fileSize:75*1024*1024,files:1,fields:1,fieldSize:2048}});
+app.post('/api/backups/export', async (req,res) => {
+  try { const buffer=await backups.export(req.body.password); res.set('Cache-Control','no-store').attachment('home-display-'+new Date().toISOString().slice(0,10)+'.hdbackup').type('application/octet-stream').send(buffer); }
+  catch(error) { res.status(400).json({error:error.message}); }
+});
+for (const mode of ['inspect','restore']) app.post('/api/backups/'+mode, restoreUpload.single('file'), async (req,res) => {
+  try { if(!req.file)throw Error('Choose a backup file.'); const summary=await backups.restore(req.file.buffer,req.body.password,mode==='inspect'); res.set('Cache-Control','no-store').json({success:true,summary}); }
+  catch(error) { res.status(400).json({error:error.message}); }
+});
+
 app.post('/api/screens',(req,res)=>{try{res.json({screen:screens.save(req.body)});}catch(error){res.status(400).json({error:error.message});}});
 app.delete('/api/screens/:id',(req,res)=>{screens.remove(req.params.id);res.json({success:true});});
 app.get('/api/updates',async(req,res)=>res.json({...await updates.check(req.query.check==='1'),state:updates.state(),tokenConfigured:updates.tokenConfigured()}));
@@ -113,13 +124,13 @@ function networkAddresses() {
   for (const entries of Object.values(os.networkInterfaces())) for (const entry of entries || []) if (entry.family === 'IPv4' && !entry.internal) hosts.push(entry.address);
   return hosts.map(host => 'http://' + host + (String(PORT) === '80' ? '' : ':' + PORT));
 }
-app.get('/api/device', (req, res) => res.set('Cache-Control', 'no-store').json({ addresses: networkAddresses(), controls: process.env.HOME_DISPLAY_CONTROL === 'local', manualSleep: manualSleepState }));
+app.get('/api/device', (req, res) => res.set('Cache-Control', 'no-store').json({ addresses: networkAddresses(), controls: process.env.HOME_DISPLAY_CONTROL === 'local', manualSleep: screens.sleep(req.query.screen) }));
 app.get('/api/qr.svg', (req, res) => {
   const text = req.query.text;
   if (typeof text !== 'string' || !/^https?:\/\//.test(text) || text.length > 300) return res.status(400).json({ error: 'Invalid address.' });
   res.type('image/svg+xml').send(new QRCode({ content: text, padding: 2, width: 220, height: 220, ecl: 'M', join: true, container: 'svg-viewbox' }).svg());
 });
-app.post('/api/display/sleep', (req, res) => { manualSleepState = Boolean(req.body.sleep); res.json({ success: true, manualSleep: manualSleepState }); });
+app.post('/api/display/sleep', (req, res) => { try { const id=req.body.screen; if(id !== undefined && typeof id !== 'string') throw Error('Invalid screen.'); res.json({success:true,manualSleep:screens.setSleep(id,req.body.sleep)}); } catch(error) { res.status(400).json({error:error.message}); } });
 app.post('/api/pi/control', (req, res) => {
   const action = req.body.action;
   if (!['restart_browser', 'reboot_pi'].includes(action)) return res.status(400).json({ error: 'Invalid action.' });

@@ -114,7 +114,7 @@ module.exports=function createPlugins(dataDir,contentDir){
   }
   async function status(plugin,force=false){const existing=cache.get(plugin.id);if(existing&&!force&&Date.now()-existing.at<6000)return existing.value;const value=probe(plugin);cache.set(plugin.id,{at:Date.now(),value});return value;}
   function pageUrl(p){const adapter=definition(p.type)?.adapter;if(adapter==='json')return p.pageFile+'?plugin='+encodeURIComponent(p.id);if(p.type==='mainsail')return 'plugin-mainsail.html?id='+encodeURIComponent(p.id);return 'plugin-view.html?id='+encodeURIComponent(p.id);}
-  return {read,catalog,installDefinition,publicPlugin,status,request,
+  return {read,catalog,installDefinition,publicPlugin,status,request,resetCache:()=>cache.clear(),
     list:()=>read().map(publicPlugin),
     async statuses(){return Promise.all(read().map(p=>status(p)));},
     async data(id){const plugin=read().find(p=>p.id===id);return plugin?status(plugin):null;},

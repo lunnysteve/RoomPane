@@ -59,7 +59,7 @@ if [[ -n "${ADMIN_PASSWORD:-}" ]]; then
   unset ADMIN_PASSWORD
 fi
 # Preserve the data directory; updates replace only application files.
-rsync -a --delete --exclude='/.*' --exclude='/android-tv/' --exclude='/dist/' --exclude='node_modules/' --exclude='config.json' --exclude='content/' --exclude='tests/' --exclude='tools/' --exclude='docs/' "$SOURCE/" "$APP/"
+rsync -a --delete --exclude='/.*' --exclude='/android-tv/' --exclude='/dist/' --exclude='node_modules/' --exclude='config.json' --exclude='plugins.json' --exclude='screens.json' --exclude='display-state.json' --exclude='plugin-definitions.json' --exclude='github-token.json' --exclude='update-status.json' --exclude='*.hdbackup' --exclude='content/' --exclude='tests/' --exclude='tools/' --exclude='docs/' "$SOURCE/" "$APP/"
 cd "$APP"
 npm ci --omit=dev --ignore-scripts
 chown -R root:root "$APP" "$RUNTIME"

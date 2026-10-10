@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 1.3.0
+
+- Encrypted Studio backup/restore for settings, media, fonts, screens and plugin connections; validates before restoring and retains previous data for recovery.
+- Independent, persistent on/off controls and optional sleep schedules for each named screen.
+- Clear connection/retry messages when a display cannot load its first page.
+- Live page schedule changes, working manual sleep and an always-on option using matching sleep/wake times.
+- Validation for malformed page addresses, schedules and duplicate page/screen IDs.
+- Browser tests now run on main/pull requests and gate release publication.
+- Release updates now replace privileged updater helpers with rollback, alongside the application.
+
 
 - Redesigned Studio: a page list with live thumbnails, drag-to-reorder and on/off switches; a full-width page editor; one save bar with Discard; Settings for location, schedule, fonts and files.
 - Per-page schedules (hours and days) and adding any ready-made page or web address, ported from the old admin console, which is removed.

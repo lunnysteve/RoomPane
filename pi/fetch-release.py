@@ -11,6 +11,12 @@ NODE=Path('/opt/home-display/node/bin')
 UPDATES=Path('/opt/home-display/updates')
 DATA=Path(os.environ.get('HOME_DISPLAY_DATA_DIR','/var/lib/home-display'))
 REPO=os.environ.get('HOME_DISPLAY_UPDATE_REPO','lunnysteve/home-display')
+SYSTEM_FILES={
+    'fetch-release.py':(Path('/usr/local/lib/home-display/fetch-release.py'),0o755),
+    'home-display-control':(Path('/usr/local/sbin/home-display-control'),0o755),
+    'home-display.sudoers':(Path('/etc/sudoers.d/home-display'),0o440),
+    'home-display-update.service':(Path('/etc/systemd/system/home-display-update.service'),0o644),
+}
 TOKEN=os.environ.get('HOME_DISPLAY_GITHUB_TOKEN','')
 if not TOKEN:
     try:TOKEN=json.loads((DATA/'github-token.json').read_text()).get('token','')
@@ -51,6 +57,32 @@ def healthy():
         if subprocess.run(['curl','--fail','--silent','http://127.0.0.1:3000/api/health'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0:return True
         time.sleep(1)
     return False
+
+def replace_system_file(source,target,mode):
+    target.parent.mkdir(parents=True,exist_ok=True)
+    temporary=target.with_name(target.name+'.update-tmp')
+    try:
+        shutil.copyfile(source,temporary)
+        temporary.chmod(mode)
+        os.replace(temporary,target)
+    finally:
+        if temporary.exists():temporary.unlink()
+
+def prepare_system_files(stage,backup):
+    for name,(target,mode) in SYSTEM_FILES.items():
+        source=stage/'pi'/name
+        if not source.is_file():raise ValueError('Release is missing an updater helper: '+name)
+    run('visudo','-cf',str(stage/'pi/home-display.sudoers'))
+    backup.mkdir(mode=0o700)
+    for name,(target,mode) in SYSTEM_FILES.items():
+        if target.exists():shutil.copy2(target,backup/name)
+        else:(backup/(name+'.absent')).touch()
+
+def restore_system_files(backup):
+    for name,(target,mode) in SYSTEM_FILES.items():
+        if (backup/(name+'.absent')).exists():target.unlink(missing_ok=True)
+        else:replace_system_file(backup/name,target,mode)
+    run('systemctl','daemon-reload')
 def main():
     if os.geteuid()!=0: raise ValueError('Updater must run as root')
     if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',REPO): raise ValueError('Invalid update repository')
@@ -94,15 +126,21 @@ def main():
         for script in stage.glob('*.js'):run(str(NODE/'node'),'--check',str(script))
         # Runtime settings, screens, plugins, keys and uploads live outside APP.
         backup=UPDATES/('app-v'+current+'-'+str(time.time_ns()))
+        system_backup=UPDATES/('system-v'+current+'-'+str(time.time_ns()))
+        prepare_system_files(stage,system_backup)
         run('systemctl','stop','home-display')
         try:
             APP.rename(backup);stage.rename(APP)
+            for name,(target,mode) in SYSTEM_FILES.items():replace_system_file(APP/'pi'/name,target,mode)
+            run('systemctl','daemon-reload')
             run('systemctl','start','home-display')
             if not healthy():raise ValueError('Updated service failed its health check')
         except Exception:
             run('systemctl','stop','home-display')
-            if APP.exists():APP.rename(work/'failed-app')
-            if backup.exists():backup.rename(APP)
+            if backup.exists():
+                if APP.exists():APP.rename(work/'failed-app')
+                backup.rename(APP)
+            restore_system_files(system_backup)
             run('systemctl','start','home-display')
             raise
         status('complete','Installed '+tag+'. Previous app retained for rollback.',version)

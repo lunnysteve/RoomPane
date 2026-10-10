@@ -190,6 +190,10 @@
     </div>
 
     <!-- Screen Off Sleep Overlay -->
+    <div id="connectionAlert" class="no-pages-alert" role="status">
+      <h1>Connecting to Home Display</h1>
+      <p id="connectionMessage">Waiting for your pages…</p>
+    </div>
     <div id="sleepOverlay" class="screen-off-overlay" onclick="wakeScreen()">
       <div class="wake-message">Tap to Wake</div>
     </div>
@@ -210,6 +214,9 @@
     let rotationIndex = 0;
     let rotationTimeout = null;
     let isSleeping = false;
+    let manualSleep = false;
+    let configLoaded = false;
+    let configFailure = '';
     let pageFetchInterval = null;
     let pluginPages = [];
     const screenId=location.pathname.startsWith('/screen/')?decodeURIComponent(location.pathname.split('/')[2]):null;
@@ -236,7 +243,7 @@
     async function loadServerConfig() {
       try {
         const response = await fetch('/api/config'+screenQuery);
-        if (!response.ok) throw new Error('API request failed');
+        if (!response.ok) throw new Error(response.status === 404 ? 'This screen profile no longer exists. Check its address in Studio.' : 'Home Display is unavailable. Retrying automatically…');
         const data = await response.json();
         
         const oldPages = JSON.stringify(allPages);
@@ -244,14 +251,28 @@
         
         allPages = data.pages || [];
         settings = data.settings || settings;
+        manualSleep = data.manualSleep === true;
+        configLoaded = true;
+        configFailure = '';
 
         // If something changed, re-initialize
         if (oldPages !== JSON.stringify(allPages) || oldSettings !== JSON.stringify(settings)) {
           initDisplay();
         }
+        checkSleepCycle();
+        refreshConnectionMessage();
       } catch (err) {
+        configFailure = err.message.includes('screen profile') ? err.message : 'Cannot reach Home Display. Check the network connection. Retrying automatically…';
+        refreshConnectionMessage();
         console.error('Failed to load server config:', err);
       }
+    }
+
+    function refreshConnectionMessage() {
+      const waiting = activePages.length === 0 && (!configLoaded || !!configFailure);
+      document.getElementById('connectionAlert').style.display = waiting ? 'block' : 'none';
+      document.getElementById('connectionMessage').textContent = configFailure || 'Waiting for your pages…';
+      document.getElementById('noPagesAlert').style.display = activePages.length === 0 && !waiting ? 'block' : 'none';
     }
 
     // Check if a page's schedule allows it to run right now
@@ -283,20 +304,29 @@
       }
     }
 
+    function eligiblePages() {
+      return [...allPages,...pluginPages].filter(p => p.active && isPageInSchedule(p) && (!p.pluginId || !p.onlyConnected || pluginConnections[p.pluginId] === true));
+    }
+
+    function refreshSchedule() {
+      const pages = eligiblePages();
+      if (JSON.stringify(pages.map(p => p.id)) !== JSON.stringify(activePages.map(p => p.id))) initDisplay();
+    }
+
     function initDisplay() {
       // Apply transition class
       const container = document.getElementById('viewportContainer');
       container.className = `viewport-container transition-${settings.transition || 'fade'}`;
 
       // Filter active pages that match schedule
-      activePages = [...allPages,...pluginPages].filter(p => p.active && isPageInSchedule(p) && (!p.pluginId || !p.onlyConnected || pluginConnections[p.pluginId] === true));
+      activePages = eligiblePages();
+      refreshConnectionMessage();
 
       // Clear existing iframes
       const existingIframes = container.querySelectorAll('iframe');
       existingIframes.forEach(f => f.remove());
 
       if (activePages.length === 0) {
-        document.getElementById('noPagesAlert').style.display = 'block';
         if (rotationTimeout) clearTimeout(rotationTimeout);
         return;
       }
@@ -307,7 +337,7 @@
       activePages.forEach((p, idx) => {
         const frame = document.createElement('iframe');
         frame.id = 'iframe_' + p.id;
-    frame.src = new URL(p.url, location.origin + '/').href;
+        frame.src = new URL(p.url, location.origin + '/').href;
         if (idx === 0) {
           frame.className = 'active';
         }
@@ -380,9 +410,11 @@
 
       if (sleepMin < wakeMin) {
         shouldSleep = (currentMin >= sleepMin && currentMin < wakeMin);
-      } else {
+      } else if (sleepMin > wakeMin) {
         shouldSleep = (currentMin >= sleepMin || currentMin < wakeMin);
       }
+
+      shouldSleep = manualSleep || shouldSleep;
 
       if (shouldSleep) {
         if (!isSleeping) {
@@ -398,6 +430,7 @@
     }
 
     function wakeScreen() {
+      if (manualSleep) return;
       isSleeping = false;
       document.getElementById('sleepOverlay').classList.remove('active');
       setupRotation();
@@ -410,6 +443,7 @@
 
     // Check sleep every 15 seconds
     setInterval(checkSleepCycle, 15000);
+    setInterval(refreshSchedule, 15000);
 
     // Poll server for config updates every 30 seconds
     setInterval(loadServerConfig, 30000);

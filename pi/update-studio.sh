@@ -6,12 +6,16 @@ APP=/opt/home-display/app
 NODE=/opt/home-display/node/bin/node
 [[ -f "$APP/server.js" && -x "$NODE" ]] || { echo 'Standalone installation not found.' >&2; exit 1; }
 [[ -f "$SOURCE/app-files.json" ]] || { echo 'Missing app-files.json' >&2; exit 1; }
-mapfile -t files < <("$NODE" -e 'const m=require(process.argv[1]);for(const f of [...m.server,...m.studio,...m.static])console.log(f)' "$SOURCE/app-files.json")
+mapfile -t files < <("$NODE" -e 'const m=require(process.argv[1]);for(const f of new Set(Object.values(m).flat()))console.log(f)' "$SOURCE/app-files.json")
 for file in "${files[@]}"; do [[ -f "$SOURCE/$file" ]] || { echo "Missing $file" >&2; exit 1; }; done
 for file in "${files[@]}"; do [[ "$file" != *.js ]] || "$NODE" --check "$SOURCE/$file"; done
 install -d -m 700 /opt/home-display/updates
 BACKUP=$(mktemp -d /opt/home-display/updates/studio-XXXXXXXX)
 MODULES_BACKED_UP=false
+system_files=(/usr/local/lib/home-display/fetch-release.py /usr/local/sbin/home-display-control /etc/sudoers.d/home-display /etc/systemd/system/home-display-update.service)
+for i in "${!system_files[@]}"; do
+  if [[ -f "${system_files[$i]}" ]]; then cp -p "${system_files[$i]}" "$BACKUP/system-$i"; else touch "$BACKUP/system-$i.absent"; fi
+done
 for file in "${files[@]}"; do
   if [[ -f "$APP/$file" ]]; then cp -p "$APP/$file" "$BACKUP/$file"; else touch "$BACKUP/$file.absent"; fi
 done
@@ -40,7 +44,11 @@ install -m 440 "$SOURCE/pi/home-display.sudoers" /etc/sudoers.d/home-display
 visudo -cf /etc/sudoers.d/home-display
 install -m 644 "$SOURCE/pi/home-display-update.service" /etc/systemd/system/home-display-update.service
 systemctl daemon-reload
-systemctl restart home-display
+  for i in "${!system_files[@]}"; do
+    if [[ -f "$BACKUP/system-$i.absent" ]]; then rm -f -- "${system_files[$i]}"; else cp -p "$BACKUP/system-$i" "${system_files[$i]}"; fi
+  done
+  systemctl daemon-reload
+  systemctl restart home-display
 ready=false
 for attempt in {1..30}; do
   if curl --fail --silent http://127.0.0.1:3000/api/health >/dev/null; then ready=true; break; fi

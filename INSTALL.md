@@ -144,4 +144,31 @@ npm start
 
 Use Node 22 or newer. Without `HOME_DISPLAY_DATA_DIR`, runtime data stays in the source folder. Set `HOME_DISPLAY_ADMIN_PASSWORD_HASH` (create one with `node password.js`) to protect administration; without it the server logs a warning and anyone who can reach it can change the dashboard. Browser restart and reboot controls are only available on installer-based Pi setups.
 
+## Backups and recovery
+
+In **Settings → Backup and restore**, save your changes first, enter a backup password of at least 12 characters, then download the `.hdbackup` file. Store the file and password safely. The password cannot be reset or recovered.
+
+Browser backups use authenticated AES-256-GCM encryption with a password-derived key. They contain saved settings, pages, uploaded files/fonts, screen schedules and plugin connections, including private plugin credentials. They exclude the device's admin password, GitHub token and operating-system configuration. The browser flow supports up to **50 MB of settings/media and 2,000 files** to keep memory use bounded on older Pis.
+
+To restore, choose the file and enter its password. Studio checks the password and contents, then asks before replacing the saved configuration and media. Unsaved editor changes are discarded only after a successful restore. The previous data remains in a private `.before-restore-*` folder inside `/var/lib/home-display` for manual recovery. Those folders can be removed by the administrator once the restored display has been checked; they are excluded from subsequent browser backups.
+
+### Full Pi data backup, including larger photo libraries
+
+This method also saves device credentials. Install `gnupg` if needed (`sudo apt install gnupg`), then run from your home directory in Bash. The display pauses while the snapshot is taken and restarts when the command finishes.
+
+```bash
+sudo systemctl stop home-display && (
+  trap 'sudo systemctl start home-display' EXIT
+  set -o pipefail
+  sudo tar -C / -czf - var/lib/home-display etc/home-display |
+    gpg --symmetric --cipher-algo AES256 --output "home-display-full-$(date +%Y%m%d-%H%M%S).tar.gz.gpg"
+)
+```
+
+Copy the encrypted file off the SD card. This is a data backup, not an operating-system image. To recover onto another Pi, install Home Display first, decrypt your own backup into a private temporary directory, inspect the archive, stop `home-display`, and restore its `var/lib/home-display` and `etc/home-display` directories to `/`. Set `/var/lib/home-display` ownership to `home-display:home-display`, retain restrictive permissions on `/etc/home-display/environment`, then restart the service. Reapply any hardware-specific DSI settings separately. A full restore replaces the admin password and GitHub credentials with those from the backup.
+
+### Screen sleep behavior
+
+The default URL uses the schedule under **Settings**. Named screen profiles can inherit it or set their own on/off times under **Screens**. Equal times mean always on. Each screen has an independent manual off/on button; manual off persists across restarts. Turning it back on returns it to its schedule, so it stays dark if its scheduled sleep period is still active. Changes reach displays on their next configuration poll, within 30 seconds.
+
 A downloadable SD-card image is a later milestone.

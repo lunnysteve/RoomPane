@@ -78,7 +78,14 @@ $('add-page-cancel').onclick = () => { $('add-page-form').hidden = true; };
 $('add-page-confirm').onclick = () => {
   const file = $('add-page-file').value, url = $('add-page-url').value.trim();
   if (!file && !/^https?:\/\//i.test(url)) return message('Choose a page or enter a web address starting with http:// or https://.');
-  const name = file ? $('add-page-file').selectedOptions[0].textContent.replace(/^./, c => c.toUpperCase()) : new URL(url).hostname;
+  let address;
+  if (!file) {
+    try {
+      address = new URL(url);
+      if (!['http:', 'https:'].includes(address.protocol) || address.username || address.password) throw Error();
+    } catch { return message('Enter a valid http:// or https:// address without a username or password.'); }
+  }
+  const name = file ? $('add-page-file').selectedOptions[0].textContent.replace(/^./, c => c.toUpperCase()) : address.hostname;
   config.pages.push({id:'p_' + Date.now(), name, url:file || url, time:30, active:true, schedule:{enabled:false}});
   $('add-page-form').hidden = true; changed(); renderPages();
 };
@@ -317,7 +324,11 @@ async function refreshScreens() {
       const edit = document.createElement('button'); edit.textContent = 'Edit'; edit.onclick = () => editScreen(screen);
       const remove = document.createElement('button'); remove.textContent = 'Remove'; remove.className = 'danger'; remove.style.marginLeft = '8px';
       remove.onclick = async () => { if (!confirm('Remove ' + screen.name + '? Its address will stop working.')) return; await api('/api/screens/' + screen.id, {method:'DELETE'}); refreshScreens(); };
-      card.append(edit, remove); $('screen-list').append(card);
+      const sleep = document.createElement('button'); sleep.textContent = screen.manualSleep ? 'Turn screen on' : 'Turn screen off';
+      sleep.style.marginLeft = '8px';
+      sleep.onclick = async () => { try { await post('/api/display/sleep', {screen:screen.id,sleep:!screen.manualSleep}); await refreshScreens(); } catch(error) { message(error.message); } };
+      const schedule = document.createElement('p'); schedule.className = 'hint'; schedule.textContent = screen.schedule ? (screen.schedule.sleepTime === screen.schedule.wakeTime ? 'Always on' : 'Off ' + screen.schedule.sleepTime + ' / on ' + screen.schedule.wakeTime) : 'Uses the default schedule';
+      card.append(schedule, edit, remove, sleep); $('screen-list').append(card);
     }
     screenOptions = [...(config?.pages || []), ...plugins.plugins.map(p => ({id:p.id, name:p.name + ' (plugin)'}))];
     renderDisplayControls();
@@ -327,17 +338,21 @@ function editScreen(screen) {
   screenEditing = screen?.id || ''; $('screen-name').value = screen?.name || ''; $('screen-all').checked = !screen || screen.pageIds === null; $('screen-pages').replaceChildren();
   for (const p of screenOptions) { const label = document.createElement('label'), checkbox = document.createElement('input'); label.className = 'check'; checkbox.type = 'checkbox'; checkbox.value = p.id; checkbox.checked = !screen || screen.pageIds === null || screen.pageIds.includes(p.id); label.append(checkbox, ' ' + p.name); $('screen-pages').append(label); }
   $('screen-pages').hidden = $('screen-all').checked; $('screen-form').hidden = false;
+  $('screen-inherit').checked = !screen?.schedule; $('screen-schedule').hidden = $('screen-inherit').checked;
+  $('screen-sleep').value = screen?.schedule?.sleepTime || config.settings.sleepTime || '23:00';
+  $('screen-wake').value = screen?.schedule?.wakeTime || config.settings.wakeTime || '07:00';
 }
 $('new-screen').onclick = async () => { await refreshScreens(); editScreen(); };
 $('screen-all').onchange = () => { $('screen-pages').hidden = $('screen-all').checked; };
+$('screen-inherit').onchange = () => { $('screen-schedule').hidden = $('screen-inherit').checked; };
 $('cancel-screen').onclick = () => { $('screen-form').hidden = true; };
-$('save-screen').onclick = async () => { try { await post('/api/screens', {id:screenEditing || undefined, name:$('screen-name').value, pageIds:$('screen-all').checked ? null : [...document.querySelectorAll('#screen-pages input:checked')].map(input => input.value)}); $('screen-form').hidden = true; await refreshScreens(); } catch (error) { message(error.message); } };
+$('save-screen').onclick = async () => { try { await post('/api/screens', {id:screenEditing || undefined, name:$('screen-name').value, schedule:$('screen-inherit').checked ? null : {sleepTime:$('screen-sleep').value,wakeTime:$('screen-wake').value}, pageIds:$('screen-all').checked ? null : [...document.querySelectorAll('#screen-pages input:checked')].map(input => input.value)}); $('screen-form').hidden = true; await refreshScreens(); } catch (error) { message(error.message); } };
 function renderDisplayControls() {
   $('sleep-toggle').textContent = device.manualSleep ? 'Turn screen on' : 'Turn screen off';
   $('restart-browser').disabled = $('reboot-pi').disabled = !device.controls;
   $('display-status').textContent = device.controls ? '' : 'Restart and reboot are available on a Pi set up with install.sh.';
 }
-$('sleep-toggle').onclick = async () => { try { device.manualSleep = (await post('/api/display/sleep', {sleep:!device.manualSleep})).manualSleep; renderDisplayControls(); $('display-status').textContent = device.manualSleep ? 'Screen turned off. It stays off until you turn it on.' : 'Screen turned on.'; } catch (e) { $('display-status').textContent = e.message; } };
+$('sleep-toggle').onclick = async () => { try { device.manualSleep = (await post('/api/display/sleep', {sleep:!device.manualSleep})).manualSleep; renderDisplayControls(); $('display-status').textContent = device.manualSleep ? 'Screen turned off. It stays off until you turn it on.' : 'Manual off cleared. The screen now follows its schedule.'; } catch (e) { $('display-status').textContent = e.message; } };
 for (const [id, action, question] of [['restart-browser','restart_browser','Restart the display browser?'],['reboot-pi','reboot_pi','Reboot the Pi? The display and Studio will be unavailable for about a minute.']])
   $(id).onclick = async () => { if (!confirm(question)) return; try { await post('/api/pi/control', {action}); $('display-status').textContent = action === 'reboot_pi' ? 'Rebooting…' : 'Browser restarting…'; } catch (e) { $('display-status').textContent = e.message; } };
 

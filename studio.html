@@ -107,11 +107,15 @@
     <label for="screen-name">Name</label><input id="screen-name" placeholder="Living room TV">
     <label class="check" style="margin-top:12px"><input id="screen-all" type="checkbox" checked> Show all pages and plugins</label>
     <div id="screen-pages"></div>
+    <label class="check"><input id="screen-inherit" type="checkbox" checked> Use the default screen schedule</label>
+    <div id="screen-schedule" class="row" hidden><div><label for="screen-sleep">Screen off at</label><input id="screen-sleep" type="time"></div><div><label for="screen-wake">Screen on at</label><input id="screen-wake" type="time"></div></div>
+    <p class="hint">Set matching on/off times to keep this screen on all day.</p>
     <div class="row" style="margin-top:12px"><button id="save-screen" class="primary">Save screen</button><button id="cancel-screen">Cancel</button></div>
   </div>
 </section>
 <section id="display-panel" class="panel narrow" data-for="screens">
-  <h2>This display</h2>
+  <h2>Default display</h2>
+  <p class="hint">This on/off button controls the default display URL. Each named screen has its own on/off button above. Restart and reboot affect the Pi.</p>
   <div class="tools"><button id="sleep-toggle">Turn screen off</button><button id="restart-browser">Restart browser</button><button id="reboot-pi" class="danger">Reboot Pi</button></div>
   <p id="display-status" class="hint" role="status"></p>
 </section>
@@ -148,6 +152,7 @@
   <div class="row"><div><label for="timezone">Timezone</label><input id="timezone" placeholder="Europe/London"></div><div><label for="units">Units</label><select id="units"><option value="celsius">Celsius</option><option value="fahrenheit">Fahrenheit</option></select></div></div>
   <h2 style="margin-top:28px">Screen schedule</h2>
   <div class="row"><div><label for="sleepTime">Screen off at</label><input id="sleepTime" type="time"></div><div><label for="wakeTime">Screen on at</label><input id="wakeTime" type="time"></div></div>
+  <p class="hint">Set both times to the same value to keep screens on all day. Named screens can choose their own schedule under Screens.</p>
   <label for="transition">Page transition</label><select id="transition"><option value="fade">Fade</option><option value="slide">Slide</option><option value="instant">Instant</option></select>
 </section>
 <section class="panel narrow" data-for="settings">
@@ -167,6 +172,18 @@
 </section>
 
 <!-- Updates -->
+<section class="panel narrow" data-for="settings">
+  <h2>Backup and restore</h2>
+  <p class="hint">Save your pages, screen profiles, fonts, uploads and plugin connections in an encrypted backup. Plugin credentials are included. Your admin password and GitHub token stay on this device.</p>
+  <label for="backup-password">Backup password</label><input id="backup-password" type="password" autocomplete="new-password" minlength="12" placeholder="At least 12 characters">
+  <p class="hint">Keep this password somewhere safe: it cannot be recovered. Browser backups support up to 50 MB of settings and media.</p>
+  <button id="backup-export">Download encrypted backup</button>
+  <label for="backup-file">Restore a backup</label><input id="backup-file" type="file" accept=".hdbackup">
+  <button id="backup-restore" class="danger" style="margin-top:12px">Check and restore backup</button>
+  <p id="backup-status" class="hint" role="status"></p>
+</section>
+
+<!-- Updates -->
 <section id="updates-panel" class="panel narrow" data-for="updates">
   <h2>Software updates</h2>
   <p id="update-version">Loading version…</p>
@@ -182,6 +199,6 @@
 </main>
 
 <div id="save-bar" class="idle" hidden><span id="status" role="status">Loading your display…</span><button id="discard">Discard</button><button id="save" class="primary">Save changes</button></div>
-<script src="/design-assets.js"></script><script src="/studio.js"></script><script src="/plugin-studio.js"></script>
+<script src="/design-assets.js"></script><script src="/studio.js"></script><script src="/plugin-studio.js"></script><script src="/studio-backup.js"></script>
 </body>
 </html>

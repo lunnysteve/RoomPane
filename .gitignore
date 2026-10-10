@@ -15,6 +15,10 @@ android-tv/local.properties
 **/__pycache__/
 plugins.json
 screens.json
+display-state.json
+.restore-*/
+.before-restore-*/
+*.hdbackup
 github-token.json
 update-status.json
 

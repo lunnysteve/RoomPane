@@ -1,5 +1,63 @@
 {
-  "server": ["server.js", "plugins.js", "screens.js", "updates.js", "plugin-engine.js", "plugin-catalog.js", "design-validation.js", "password.js"],
-  "studio": ["index.html", "studio.html", "studio.js", "studio.css", "plugin-studio.js", "plugin-view.html", "plugin-view.js", "plugin-sdk.js", "plugin-mainsail.html", "plugin-mainsail.js", "design-display.html", "design-display.js", "design-assets.js", "design-assets.css", "sw.js", "lite.js"],
-  "static": ["app-files.json", "package.json", "package-lock.json", "plugin-example.html", "studio-sans.ttf", "studio-serif.ttf", "studio-mono.ttf", "studio-heavy.ttf", "studio-serif-bold.ttf", "studio-mono-italic.ttf", "studio-font-license.txt", "manifest.webmanifest", "app-icon.svg", "app-icon-192.png", "app-icon-512.png"]
+  "server": [
+    "server.js",
+    "plugins.js",
+    "screens.js",
+    "updates.js",
+    "plugin-engine.js",
+    "plugin-catalog.js",
+    "design-validation.js",
+    "password.js",
+    "backups.js"
+  ],
+  "studio": [
+    "index.html",
+    "studio.html",
+    "studio.js",
+    "studio.css",
+    "plugin-studio.js",
+    "plugin-view.html",
+    "plugin-view.js",
+    "plugin-sdk.js",
+    "plugin-mainsail.html",
+    "plugin-mainsail.js",
+    "design-display.html",
+    "design-display.js",
+    "design-assets.js",
+    "design-assets.css",
+    "sw.js",
+    "lite.js",
+    "studio-backup.js"
+  ],
+  "static": [
+    "app-files.json",
+    "package.json",
+    "package-lock.json",
+    "plugin-example.html",
+    "studio-sans.ttf",
+    "studio-serif.ttf",
+    "studio-mono.ttf",
+    "studio-heavy.ttf",
+    "studio-serif-bold.ttf",
+    "studio-mono-italic.ttf",
+    "studio-font-license.txt",
+    "manifest.webmanifest",
+    "app-icon.svg",
+    "app-icon-192.png",
+    "app-icon-512.png",
+    "config.example.json"
+  ],
+  "pages": [
+    "countdown.html",
+    "display.html",
+    "forecast.html",
+    "humidity.html",
+    "iss.html",
+    "large_time.html",
+    "large_weather.html",
+    "nasa.html",
+    "sky.html",
+    "time.html",
+    "weather.html"
+  ]
 }

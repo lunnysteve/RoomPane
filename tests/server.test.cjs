@@ -71,12 +71,15 @@ test('standalone admin access, content safety and persistence', async () => {
     assert.equal((await fetch(base + '/api/config')).status, 200);
     for (const url of ['/admin', '/studio.html', '/api/plugins', '/api/device', '/api/qr.svg?text=http://a', '/api/files', '/api/file-content?filename=weather.html']) assert.equal((await fetch(base + url)).status, 401);
     assert.equal((await fetch(base + '/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 401);
+    for (const action of ['export','inspect','restore']) assert.equal((await fetch(base+'/api/backups/'+action,{method:'POST'})).status,401);
     assert.equal((await fetch(base + '/admin', { headers: { Authorization: auth } })).status, 200);
     assert.equal((await fetch(base + '/admin', { headers: { Authorization: 'Basic ' + Buffer.from('admin:wrong').toString('base64') } })).status, 401);
     for (const url of ['/server.js', '/plugins.js', '/package.json', '/config.json', '/.git/config', '/install.sh']) assert.equal((await fetch(base + url)).status, 404);
     assert.equal((await request('/api/plugins', {type:'mainsail',name:'Invalid',sourceUrl:'file:///tmp/test'})).status, 400);
     assert.equal((await request('/api/plugins', {type:'custom',name:'Invalid',pageFile:'../secret.html'})).status, 400);
     assert.equal((await request('/api/screens',{name:'Living room',pageIds:['p_three_time']})).status,200);
+    assert.equal((await request('/api/screens',{name:'Living-room',pageIds:null})).status,400);
+    assert.deepEqual((await (await fetch(base + '/api/screens')).json()).screens.find(s=>s.id==='living-room').pageIds,['p_three_time']);
     assert.equal((await fetch(base+'/screen/living-room')).status,200);
     assert.deepEqual((await (await fetch(base+'/api/config?screen=living-room')).json()).pages.map(p=>p.id),['p_three_time']);
     assert.equal((await fetch(base+'/api/config?screen=missing')).status,404);
@@ -92,6 +95,15 @@ test('standalone admin access, content safety and persistence', async () => {
     assert.match(await (await fetch(base + '/runtime-config.js')).text(), /America\/New_York/);
     const designedPage = {id:'design_test',name:'Designed page',url:'design-display.html?id=design_test',time:30,active:true,design:{bg:'#102820',fg:'#ffffff',accent:'#87d4a4',blocks:[{id:'clock',type:'clock',x:10,y:10,w:300,h:150,size:64,colour:'#ffffff',content:''}]}};
     assert.equal((await request('/api/config', {pages:[designedPage]})).status, 200);
+    assert.equal((await request('/api/config', {pages:[designedPage, designedPage]})).status, 400);
+    for (const url of ['http://', 'javascript:alert(1)', 'https://user:secret@example.com/', '']) {
+      assert.equal((await request('/api/config', {pages:[{...designedPage,url}]})).status, 400);
+    }
+    for (const schedule of [
+      {enabled:true,days:[7],startHour:8,endHour:17},
+      {enabled:true,days:[1],startHour:24,endHour:17},
+      {enabled:true,days:'Monday',startHour:8,endHour:17}
+    ]) assert.equal((await request('/api/config', {pages:[{...designedPage,schedule}]})).status, 400);
     const invalidPage = structuredClone(designedPage);
     invalidPage.design.blocks[0].x = 750;
     assert.equal((await request('/api/config', {pages:[invalidPage]})).status, 400);
