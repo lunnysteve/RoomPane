@@ -239,7 +239,8 @@
       targetStr += 'T12:00:00';
     }
     const targetDate = new Date(targetStr);
-    
+    let intervalId;
+
     function tick() {
       const now = new Date();
       const diffTime = targetDate - now;
@@ -265,16 +266,17 @@
           container.innerHTML = `
             <div class="time-segment">
               <div class="days-number-giant" style="font-size: clamp(100px, 20vw, 260px)">☀️</div>
-              <div class="days-label-giant" style="font-size: clamp(24px, 5vw, 48px)">${cSettings.finishLabel}</div>
+              <div class="days-label-giant" style="font-size: clamp(24px, 5vw, 48px)"></div>
             </div>
           `;
+          container.querySelector('.days-label-giant').textContent = cSettings.finishLabel;
         }
         clearInterval(intervalId);
       }
     }
 
+    intervalId = setInterval(tick, 1000);
     tick();
-    const intervalId = setInterval(tick, 1000);
   }
   loadSettingsAndCalculate();
 
