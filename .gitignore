@@ -1,8 +1,6 @@
 node_modules/
 .DS_Store
 *.log
-deploy_caddy.py
-deploy.ps1
 
 # Runtime state written by the admin page (see config.example.json)
 config.json

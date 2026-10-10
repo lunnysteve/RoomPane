@@ -5,7 +5,7 @@ TV launcher entry and a DreamService screensaver. Android 6 or newer and a worki
 Android System WebView are required.
 
 1. Install the APK by sideloading, then open **Home Display** on the TV.
-2. Enter the server URL, such as `http://192.168.0.202:3000`.
+2. Enter the server URL, such as `http://raspberrypi.local:3000`.
 3. Choose **Load screens from this server**, select a profile, then save.
 4. Leave automatic viewing enabled to show that screen whenever the app opens.
 5. For screensaver use, select Home Display in the TV's screensaver settings.

@@ -17,7 +17,7 @@ public class SettingsActivity extends Activity {
         super.onCreate(saved);
         LinearLayout layout=new LinearLayout(this);layout.setOrientation(LinearLayout.VERTICAL);layout.setPadding(48,32,48,32);
         TextView title=new TextView(this);title.setText("Home Display · choose your screen");title.setTextSize(26);layout.addView(title);
-        address=new EditText(this);address.setSingleLine(true);address.setHint("http://192.168.0.202:3000/screen/living-room");address.setText(DisplayWebView.url(this));layout.addView(address);
+        address=new EditText(this);address.setSingleLine(true);address.setHint("http://raspberrypi.local:3000/screen/living-room");address.setText(DisplayWebView.url(this));layout.addView(address);
         Button discover=new Button(this);discover.setText("Load screens from this server");discover.setOnClickListener(v->loadScreens());layout.addView(discover);
         screens=new Spinner(this);layout.addView(screens);
         screens.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){public void onNothingSelected(AdapterView<?> parent){} public void onItemSelected(AdapterView<?> parent,android.view.View view,int position,long id){if(position<endpoints.length)address.setText(endpoints[position]);}});

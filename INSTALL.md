@@ -141,6 +141,6 @@ npm test
 npm start
 ```
 
-Use Node 22 or newer. Without `HOME_DISPLAY_DATA_DIR`, runtime data stays in the source folder. Set `HOME_DISPLAY_ADMIN_PASSWORD_HASH` (create one with `node password.js`) to protect administration; without it the server logs a warning and anyone who can reach it can change the dashboard. `HOME_DISPLAY_PI_HOST` enables optional SSH controls for a separate Pi; its SSH host key and credentials must already be configured. The installer selects local controls automatically.
+Use Node 22 or newer. Without `HOME_DISPLAY_DATA_DIR`, runtime data stays in the source folder. Set `HOME_DISPLAY_ADMIN_PASSWORD_HASH` (create one with `node password.js`) to protect administration; without it the server logs a warning and anyone who can reach it can change the dashboard. Browser restart and reboot controls are only available on installer-based Pi setups.
 
 A downloadable SD-card image is a later milestone.

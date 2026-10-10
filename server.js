@@ -109,13 +109,8 @@ app.post('/api/display/sleep', (req, res) => { manualSleepState = Boolean(req.bo
 app.post('/api/pi/control', (req, res) => {
   const action = req.body.action;
   if (!['restart_browser', 'reboot_pi'].includes(action)) return res.status(400).json({ error: 'Invalid action.' });
-  let command, args;
-  if (process.env.HOME_DISPLAY_CONTROL === 'local') {
-    command = '/usr/bin/sudo'; args = ['-n', '/usr/local/sbin/home-display-control', action];
-  } else if (process.env.HOME_DISPLAY_PI_HOST && /^[a-zA-Z0-9._-]+$/.test(process.env.HOME_DISPLAY_PI_HOST)) {
-    command = 'ssh'; args = ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', 'pi@' + process.env.HOME_DISPLAY_PI_HOST, action === 'restart_browser' ? 'pkill -f chromium' : 'sudo /sbin/reboot'];
-  } else return res.status(503).json({ error: 'Display controls are not configured.' });
-  execFile(command, args, { timeout: 15000 }, err => {
+  if (process.env.HOME_DISPLAY_CONTROL !== 'local') return res.status(503).json({ error: 'Display controls require the standalone Pi setup.' });
+  execFile('/usr/bin/sudo', ['-n', '/usr/local/sbin/home-display-control', action], { timeout: 15000 }, err => {
     if (err) return res.status(500).json({ error: 'Display control failed.' });
     res.json({ success: true, action });
   });
