@@ -3,7 +3,9 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const designAssets = require('./design-assets.js');
+const { pagesError } = require('./design-validation.js');
+const { verifyPassword } = require('./password.js');
+const appFiles = require('./app-files.json');
 const createPlugins = require('./plugins.js');
 const createScreens = require('./screens.js');
 const createUpdates = require('./updates.js');
@@ -14,8 +16,9 @@ const DATA_DIR = path.resolve(process.env.HOME_DISPLAY_DATA_DIR || __dirname);
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const CONTENT_DIR = path.join(DATA_DIR, 'content');
 const extensions = new Set(['.html', '.css', '.js', '.json', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.mp4', '.webm', '.ics']);
-const assets = fs.readdirSync(__dirname).filter(name => /\.(html|css|js)$/.test(name) && !['server.js','plugins.js','screens.js','updates.js','plugin-engine.js','plugin-catalog.js'].includes(name));
-const protectedAssets = ['index.html', 'admin.html', 'designer.html', 'designer.js', 'studio-extras.js', 'studio-devices.js', 'studio-navigation.js', 'plugin-studio.js', 'plugin-engine.js', 'plugin-catalog.js', 'plugin-view.html', 'plugin-view.js', 'plugin-sdk.js', 'plugins.js', 'screens.js', 'updates.js', 'plugin-mainsail.html', 'plugin-mainsail.js', 'design-display.html', 'design-display.js', 'design-assets.js', 'design-assets.css', 'sw.js', 'lite.js'];
+// app-files.json lists server modules (never served) and Studio files (served but not editable or replaceable).
+const assets = fs.readdirSync(__dirname).filter(name => /\.(html|css|js)$/.test(name) && !appFiles.server.includes(name));
+const protectedAssets = [...appFiles.server, ...appFiles.studio];
 const editableAssets = assets.filter(name => !protectedAssets.includes(name));
 fs.mkdirSync(CONTENT_DIR, { recursive: true });
 if (!fs.existsSync(CONFIG_FILE)) fs.copyFileSync(path.join(__dirname, 'config.example.json'), CONFIG_FILE);
@@ -29,7 +32,7 @@ app.use(express.urlencoded({ extended: false }));
 function readConfig() { return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')); }
 function validName(name) {
   return typeof name === 'string' && name === path.basename(name) && /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(name)
-    && extensions.has(path.extname(name).toLowerCase()) && !['config.json', 'server.js', 'package.json', 'package-lock.json', 'runtime-config.js', 'app-icon.svg', 'app-icon-192.png', 'app-icon-512.png', ...protectedAssets].includes(name);
+    && extensions.has(path.extname(name).toLowerCase()) && !['config.json', 'server.js', 'package.json', 'package-lock.json', 'runtime-config.js', 'app-files.json', 'app-icon.svg', 'app-icon-192.png', 'app-icon-512.png', ...protectedAssets].includes(name);
 }
 function writeConfig(data) {
   fs.writeFileSync(CONFIG_FILE + '.tmp', JSON.stringify(data, null, 2));
@@ -37,15 +40,11 @@ function writeConfig(data) {
 }
 function authorized(req, res, next) {
   const expected = process.env.HOME_DISPLAY_ADMIN_PASSWORD_HASH;
-  // Non-installer deployments retain their original access behavior.
   if (!expected) return next();
   let credentials = '';
   if (/^Basic /i.test(req.headers.authorization || '')) credentials = Buffer.from(req.headers.authorization.slice(6), 'base64').toString();
   const separator = credentials.indexOf(':');
-  const username = credentials.slice(0, separator);
-  const password = credentials.slice(separator + 1);
-  const actual = crypto.createHash('sha256').update(password).digest('hex');
-  if (separator >= 0 && username === 'admin' && expected.length === actual.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(actual))) return next();
+  if (separator >= 0 && credentials.slice(0, separator) === 'admin' && verifyPassword(credentials.slice(separator + 1), expected)) return next();
   res.set('WWW-Authenticate', 'Basic realm="Home Display", charset="UTF-8"').status(401).send('Admin login required.');
 }
 app.use((req, res, next) => {
@@ -99,25 +98,8 @@ app.post('/api/config', (req, res) => {
     current.settings = { ...current.settings, ...settings };
   }
   if (pages !== undefined) {
-    if (!Array.isArray(pages) || pages.some(p => !p || typeof p.url !== 'string' || typeof p.name !== 'string' || typeof p.id !== 'string' || !Number.isFinite(p.time) || p.time < 5)) return res.status(400).json({ error: 'Invalid pages.' });
-    for (const page of pages) {
-      if (!page.design) continue;
-      const d = page.design;
-      const color = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
-      if (!color(d.bg) || !color(d.fg) || !color(d.accent) || !Array.isArray(d.blocks) || d.blocks.length > 40) return res.status(400).json({ error: 'Invalid page design.' });
-      const ids = new Set();
-      for (const b of d.blocks) {
-        if (!b || typeof b.id !== 'string' || ids.has(b.id) || !['clock', 'weather', 'text', 'image', 'video', 'icon', 'plugin'].includes(b.type) || !color(b.colour) || typeof b.content !== 'string' || b.content.length > 2000) return res.status(400).json({ error: 'Invalid design block.' });
-        const validFont=b.font===undefined||Object.hasOwn(designAssets.fonts,b.font)||(typeof b.font==='string'&&b.font.startsWith('uploaded:')&&fontFiles().includes(b.font.slice(9)));
-        if (!validFont || (b.animation !== undefined && !designAssets.animations.includes(b.animation)) || (b.weight !== undefined && !['400','600','700'].includes(b.weight)) || (b.align !== undefined && !['left','center','right'].includes(b.align)) || (b.background !== undefined && b.background !== 'transparent' && !color(b.background)) || (b.speed !== undefined && (!Number.isFinite(b.speed) || b.speed < 1 || b.speed > 20)) || (b.type === 'icon' && !Object.hasOwn(designAssets.icons,b.content))) return res.status(400).json({ error: 'Invalid block style or icon.' });
-        ids.add(b.id);
-        if (b.type === 'plugin' && (typeof b.pluginId !== 'string' || !/^plugin_[A-Za-z0-9_-]{1,100}$/.test(b.pluginId))) return res.status(400).json({ error: 'Choose a plugin connection for this block.' });
-        if (['x', 'y', 'w', 'h', 'size'].some(key => !Number.isFinite(b[key])) || b.x < 0 || b.y < 0 || b.w < 40 || b.h < 40 || b.x + b.w > 800 || b.y + b.h > 480 || b.size < 12 || b.size > 400) return res.status(400).json({ error: 'Design block must fit within the screen.' });
-        if (['image','video'].includes(b.type) && b.content) {
-          try { const url = new URL(b.content, 'http://display.local'); if (!['http:', 'https:'].includes(url.protocol)) throw Error(); } catch { return res.status(400).json({ error: 'Invalid image URL.' }); }
-        }
-      }
-    }
+    const error = pagesError(pages, fontFiles());
+    if (error) return res.status(400).json({ error });
     current.pages = pages;
   }
   writeConfig(current);
@@ -138,8 +120,15 @@ app.post('/api/pi/control', (req, res) => {
     res.json({ success: true, action });
   });
 });
+function freeName(name) {
+  const extension = path.extname(name), base = name.slice(0, -extension.length || undefined);
+  let candidate = name;
+  for (let n = 2; fs.existsSync(path.join(CONTENT_DIR, candidate)); n++) candidate = base + '-' + n + extension;
+  return candidate;
+}
 const upload = multer({
-  storage: multer.diskStorage({ destination: CONTENT_DIR, filename: (req, file, cb) => cb(null, file.originalname) }),
+  // Same-named uploads get a numbered copy unless the caller explicitly asks to replace (?replace=1).
+  storage: multer.diskStorage({ destination: CONTENT_DIR, filename: (req, file, cb) => cb(null, req.query.replace === '1' ? file.originalname : freeName(file.originalname)) }),
   limits: { fileSize: 20 * 1024 * 1024, files: 1 },
   fileFilter: (req, file, cb) => validName(file.originalname) ? cb(null, true) : cb(new Error('Unsupported or reserved filename.'))
 });
@@ -183,4 +172,7 @@ app.use((err, req, res, next) => {
   console.error(err.message);
   res.status(err instanceof multer.MulterError || /filename/.test(err.message) ? 400 : 500).json({ error: err instanceof multer.MulterError || /filename/.test(err.message) ? err.message : 'Request failed.' });
 });
-app.listen(PORT, process.env.HOST || '0.0.0.0', () => console.log(`Home Display listening on port ${PORT}`));
+app.listen(PORT, process.env.HOST || '0.0.0.0', () => {
+  console.log(`Home Display listening on port ${PORT}`);
+  if (!process.env.HOME_DISPLAY_ADMIN_PASSWORD_HASH) console.warn('Warning: HOME_DISPLAY_ADMIN_PASSWORD_HASH is not set, so anyone who can reach this server can change it. Create one with: node password.js');
+});

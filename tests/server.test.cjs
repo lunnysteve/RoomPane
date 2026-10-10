@@ -7,6 +7,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const net = require('node:net');
 const vm = require('node:vm');
+const { hashPassword, verifyPassword } = require('../password.js');
 
 test('bundled page scripts parse and settings load before the lightweight pages', () => {
   const root = path.join(__dirname, '..');
@@ -22,6 +23,17 @@ test('bundled page scripts parse and settings load before the lightweight pages'
   }
 });
 
+test('scrypt password hashes verify and legacy SHA-256 hashes still work', () => {
+  const stored = hashPassword('correct horse battery');
+  assert.match(stored, /^scrypt\$[a-f0-9]{32}\$[a-f0-9]{128}$/);
+  assert.equal(verifyPassword('correct horse battery', stored), true);
+  assert.equal(verifyPassword('wrong password here', stored), false);
+  const legacy = crypto.createHash('sha256').update('legacy-password').digest('hex');
+  assert.equal(verifyPassword('legacy-password', legacy), true);
+  assert.equal(verifyPassword('legacy-passwore', legacy), false);
+  assert.equal(verifyPassword('anything', 'not-a-hash'), false);
+});
+
 test('standalone admin access, content safety and persistence', async () => {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'home-display-test-'));
   const listener = net.createServer();
@@ -35,7 +47,7 @@ test('standalone admin access, content safety and persistence', async () => {
   async function start() {
     child = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], {
       env: { ...process.env, PORT: String(port), HOST: '127.0.0.1', HOME_DISPLAY_DATA_DIR: data,
-        HOME_DISPLAY_ADMIN_PASSWORD_HASH: crypto.createHash('sha256').update('test-password-123').digest('hex') },
+        HOME_DISPLAY_ADMIN_PASSWORD_HASH: hashPassword('test-password-123') },
       stdio: ['ignore', 'pipe', 'pipe']
     });
     child.stdout.on('data', text => { output += text; });
@@ -102,6 +114,13 @@ test('standalone admin access, content safety and persistence', async () => {
     form.append('file', new Blob(['<h1>Uploaded page</h1>'], { type: 'text/html' }), 'uploaded.html');
     assert.equal((await fetch(base + '/api/upload', { method: 'POST', headers: { Authorization: auth }, body: form })).status, 200);
     assert.equal(fs.existsSync(path.join(data, 'content', 'uploaded.html')), true);
+    const duplicate = new FormData();
+    duplicate.append('file', new Blob(['<h1>Second page</h1>'], { type: 'text/html' }), 'uploaded.html');
+    assert.equal((await (await fetch(base + '/api/upload', { method: 'POST', headers: { Authorization: auth }, body: duplicate })).json()).filename, 'uploaded-2.html');
+    const replacement = new FormData();
+    replacement.append('file', new Blob(['<h1>Replaced page</h1>'], { type: 'text/html' }), 'uploaded-2.html');
+    assert.equal((await (await fetch(base + '/api/upload?replace=1', { method: 'POST', headers: { Authorization: auth }, body: replacement })).json()).filename, 'uploaded-2.html');
+    assert.match(fs.readFileSync(path.join(data, 'content', 'uploaded-2.html'), 'utf8'), /Replaced page/);
     const rejected = new FormData();
     rejected.append('file', new Blob(['bad']), 'admin.html');
     assert.equal((await fetch(base + '/api/upload', { method: 'POST', headers: { Authorization: auth }, body: rejected })).status, 400);

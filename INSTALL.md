@@ -77,13 +77,13 @@ To change the password, hash a new password without printing it, update the envi
 
 ```sh
 read -rsp 'New admin password: ' NEW_PASSWORD; echo
-printf '%s' "$NEW_PASSWORD" | sha256sum
+printf '%s' "$NEW_PASSWORD" | /opt/home-display/node/bin/node /opt/home-display/app/password.js
 unset NEW_PASSWORD
 sudoedit /etc/home-display/environment
 sudo systemctl restart home-display
 ```
 
-Set `HOME_DISPLAY_ADMIN_PASSWORD_HASH` to the printed hash (the 64 hexadecimal characters). The web login uses HTTP Basic authentication. Keep this on a trusted home network; HTTPS is needed before exposing it beyond that network. Uploaded HTML/JavaScript is trusted custom dashboard code, so only the owner should have admin access.
+Set `HOME_DISPLAY_ADMIN_PASSWORD_HASH` to the printed value (it starts with `scrypt$`). Older SHA-256 hashes keep working until you change the password. The web login uses HTTP Basic authentication. Keep this on a trusted home network; HTTPS is needed before exposing it beyond that network. Uploaded HTML/JavaScript is trusted custom dashboard code, so only the owner should have admin access.
 
 ### Pi 2 with the original DSI touchscreen
 
@@ -141,6 +141,6 @@ npm test
 npm start
 ```
 
-Use Node 22. Without `HOME_DISPLAY_DATA_DIR`, runtime data stays in the source folder. Without a password hash, the existing development access behavior is retained. Set `HOME_DISPLAY_ADMIN_PASSWORD_HASH` to protect administration on other hosts. `HOME_DISPLAY_PI_HOST` enables optional SSH controls for a separate Pi; its SSH host key and credentials must already be configured. The installer selects local controls automatically.
+Use Node 22 or newer. Without `HOME_DISPLAY_DATA_DIR`, runtime data stays in the source folder. Set `HOME_DISPLAY_ADMIN_PASSWORD_HASH` (create one with `node password.js`) to protect administration; without it the server logs a warning and anyone who can reach it can change the dashboard. `HOME_DISPLAY_PI_HOST` enables optional SSH controls for a separate Pi; its SSH host key and credentials must already be configured. The installer selects local controls automatically.
 
-The existing `deploy.sh` still targets the owner's Proxmox deployment; it is not used for standalone installs. A downloadable SD-card image and an installable phone web app are later milestones.
+A downloadable SD-card image is a later milestone.

@@ -5,9 +5,10 @@ SOURCE=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 APP=/opt/home-display/app
 NODE=/opt/home-display/node/bin/node
 [[ -f "$APP/server.js" && -x "$NODE" ]] || { echo 'Standalone installation not found.' >&2; exit 1; }
-files=(server.js plugins.js plugin-engine.js plugin-catalog.js screens.js updates.js package.json package-lock.json index.html lite.js designer.html designer.js studio-extras.js studio-devices.js studio-navigation.js plugin-studio.js plugin-view.html plugin-view.js plugin-sdk.js plugin-mainsail.html plugin-mainsail.js plugin-example.html design-display.html design-display.js design-assets.js design-assets.css studio-sans.ttf studio-serif.ttf studio-mono.ttf studio-heavy.ttf studio-serif-bold.ttf studio-mono-italic.ttf studio-font-license.txt manifest.webmanifest app-icon.svg app-icon-192.png app-icon-512.png sw.js)
+[[ -f "$SOURCE/app-files.json" ]] || { echo 'Missing app-files.json' >&2; exit 1; }
+mapfile -t files < <("$NODE" -e 'const m=require(process.argv[1]);for(const f of [...m.server,...m.studio,...m.static])console.log(f)' "$SOURCE/app-files.json")
 for file in "${files[@]}"; do [[ -f "$SOURCE/$file" ]] || { echo "Missing $file" >&2; exit 1; }; done
-for file in server.js plugins.js plugin-engine.js plugin-catalog.js screens.js updates.js lite.js designer.js studio-extras.js studio-devices.js studio-navigation.js plugin-studio.js plugin-view.js plugin-sdk.js plugin-mainsail.js design-display.js design-assets.js sw.js; do "$NODE" --check "$SOURCE/$file"; done
+for file in "${files[@]}"; do [[ "$file" != *.js ]] || "$NODE" --check "$SOURCE/$file"; done
 install -d -m 700 /opt/home-display/updates
 BACKUP=$(mktemp -d /opt/home-display/updates/studio-XXXXXXXX)
 MODULES_BACKED_UP=false
@@ -48,4 +49,4 @@ done
 [[ "$ready" == true ]]
 trap - ERR
 echo "Studio installed. Backup: $BACKUP"
-echo 'Open http://192.168.0.202:3000/admin and refresh.'
+echo 'Open http://YOUR-PI:3000/admin and refresh.'

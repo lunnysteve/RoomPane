@@ -34,8 +34,7 @@ if [[ ! -f /etc/home-display/environment ]]; then
   [[ ${#ADMIN_PASSWORD} -ge 12 ]] || { echo 'Password must contain at least 12 characters.' >&2; exit 1; }
   read -rsp 'Confirm admin password: ' ADMIN_CONFIRM; echo
   [[ "$ADMIN_PASSWORD" == "$ADMIN_CONFIRM" ]] || { echo 'Passwords do not match.' >&2; exit 1; }
-  PASSWORD_HASH=$(printf '%s' "$ADMIN_PASSWORD" | sha256sum | cut -d' ' -f1)
-  unset ADMIN_PASSWORD ADMIN_CONFIRM
+  unset ADMIN_CONFIRM
 fi
 
 apt-get update
@@ -55,8 +54,12 @@ install -d "$RUNTIME"
 tar -xJf "$WORK/$NODE_FILE" -C "$RUNTIME" --strip-components=1
 export PATH="$RUNTIME/bin:$PATH"
 node --version
+if [[ -n "${ADMIN_PASSWORD:-}" ]]; then
+  PASSWORD_HASH=$(printf '%s' "$ADMIN_PASSWORD" | node "$SOURCE/password.js")
+  unset ADMIN_PASSWORD
+fi
 # Preserve the data directory; updates replace only application files.
-rsync -a --delete --exclude='.git/' --exclude='.serena/' --exclude='node_modules/' --exclude='config.json' --exclude='content/' --exclude='tests/' "$SOURCE/" "$APP/"
+rsync -a --delete --exclude='/.*' --exclude='/android-tv/' --exclude='/dist/' --exclude='node_modules/' --exclude='config.json' --exclude='content/' --exclude='tests/' --exclude='tools/' --exclude='docs/' "$SOURCE/" "$APP/"
 cd "$APP"
 npm ci --omit=dev --ignore-scripts
 chown -R root:root "$APP" "$RUNTIME"
