@@ -19,3 +19,5 @@ plugins.json
 screens.json
 github-token.json
 update-status.json
+
+plugin-definitions.json

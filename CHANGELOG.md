@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.0
+
+- Reusable plugin definitions and separate user connection settings.
+- Community installation with a JSON manifest, HTML renderer and small browser SDK.
+- Home Assistant entity tiles, local/exported photo slideshows and calendar agendas.
+- Google Calendar iCal feeds, uploaded calendars, recurring events and Home Assistant calendars.
+- All integrations available as full pages and configurable designer blocks.
+- Plugin developer guide and installable community example.
+- Private source credentials and calendar feed addresses remain on the server.
+- Studio bootstrap updates now install changed dependencies with rollback.
+
 ## 1.1.1
 
 - Focused Studio navigation for pages, screens, plugins, weather and updates.

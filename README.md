@@ -21,8 +21,9 @@ Home Display runs on your own hardware. A Pi can host the dashboard and drive it
 | Images and motion | Upload photos, GIFs, SVGs and silent looping videos; animate individual blocks. |
 | HTML editor | Edit a page’s HTML, CSS and JavaScript, with a draft preview before saving. |
 | Multiple screens | Give each display its own page selection and a URL you can copy. |
-| Connected devices | Show Mainsail/Moonraker printer progress and temperatures. Hide its page when the source disconnects. |
-| Custom plugins | Build a single HTML page for another device or service, with optional source data fetched by the server. |
+| Connected devices | Show Klipper/Moonraker printer status and selected Home Assistant entity states. Hide disconnected integrations. |
+| Photos and calendar | Rotate local photos or Google Photos exports, and show upcoming Google Calendar/iCalendar events. |
+| Universal plugins | Install reusable community definitions and HTML renderers, configure connections, and use any integration as a full page or designer block. |
 | Updates | Check versioned GitHub releases and install application updates on supported Pi installations, with rollback if startup fails. |
 | Android TV | View a screen when the app opens, or select Home Display as a system screensaver where supported. |
 
@@ -71,11 +72,20 @@ Profiles share the page library and weather settings. Each profile selects its o
 
 ## Connect your home
 
-The built-in **Mainsail / Moonraker** plugin connects to your printer’s Moonraker API, usually `http://PRINTER-IP:7125`. Enter its address, supply an API key if needed, and use **Test connection**. Enable **Only show when connected** to remove the page from rotation while the source is unavailable.
+The plugin system separates reusable integration definitions from your own connection settings. Start with **Klipper / Moonraker**, **Home Assistant**, **Photos**, or **Calendar**. Every example works as a full page or a movable block in **Pages & designer**. Choose a connection in the block’s properties to use more than one device of the same type.
 
 ![Plugin setup with source address, connection test and connected-only visibility](docs/images/studio-plugins.png)
 
-To connect another service, start with the [plugin guide and example HTML page](PLUGINS.md). Custom pages can use the server’s source-data API without exposing source credentials to the display browser. Home Assistant and other integrations can be built through this interface; they are not bundled plugins yet.
+| Example | Setup |
+| --- | --- |
+| Klipper / Moonraker | Enter `http://PRINTER-IP:7125` and an API key if needed. |
+| Home Assistant | Enter the server URL, a long-lived access token and the entity IDs you want to display. |
+| Photos | Upload images or Google Photos exports, choose existing uploads, or add image URLs. Direct Google account sign-in is not part of this version. |
+| Calendar | Paste your Google Calendar iCal address, use another feed, upload an `.ics` file, or choose a Home Assistant calendar. |
+
+Use **Test connection** for a real request from the server. **Only show when connected** hides an unavailable full page or block; other content on the designed page keeps showing. Disable **Include as a full page in rotation** for integrations you only want inside your designs.
+
+Other users can distribute plugins as a **JSON definition and HTML renderer**. Install them under **Plugins → Install a community plugin**, then enter your own connection settings. Read the [setup and developer guide](PLUGINS.md) and try the [installable power-meter example](plugin-examples/). Source credentials and private calendar feed addresses remain on the server.
 
 ## Android TV
 
@@ -113,6 +123,7 @@ Browser checks use Python, Playwright and Pillow:
 python -m pip install playwright pillow
 python -m playwright install chromium
 python tests/designer-browser.py
+python tests/plugin-browser.py
 python tests/updater-rollback.py
 ```
 

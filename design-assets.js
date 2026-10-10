@@ -24,6 +24,18 @@
   const animations=['none','pulse','float','spin','bounce','fade'];
   function applyStyle(el,b){el.style.fontFamily=fonts[b.font||'sans'];el.style.fontWeight=b.weight||'400';el.style.textAlign=b.align||'center';el.style.justifyContent=b.align==='left'?'flex-start':b.align==='right'?'flex-end':'center';el.style.backgroundColor=b.background||'transparent';}
   function fill(el,b){
+    if(b.type==='plugin'){
+      const frame=document.createElement('iframe');frame.className='design-content motion-'+(animations.includes(b.animation)?b.animation:'none');frame.title='Plugin';frame.style.cssText='width:100%;height:100%;border:0;pointer-events:none';frame.style.animationDuration=(b.speed||4)+'s';
+      el.style.padding='0';el.append(frame);
+      if(b.pluginId)fetch('/api/plugin-view/'+encodeURIComponent(b.pluginId)).then(async response=>{
+        if(!response.ok)throw Error();const view=await response.json();
+        const url=new URL(view.adapter==='json'?view.url:'/plugin-view.html?id='+encodeURIComponent(b.pluginId),location.origin);
+        url.searchParams.set('embedded','1');url.searchParams.set('colour',b.colour||'#f1f5fb');url.searchParams.set('size',String(b.size||28));
+        if(url.origin!==location.origin)throw Error();frame.src=url.href;
+      }).catch(()=>{frame.remove();el.textContent='Plugin unavailable';});
+      return frame;
+    }
+
     const media=document.createElement(b.type==='video'?'video':b.type==='image'?'img':'span');
     media.className='design-content motion-'+(animations.includes(b.animation)?b.animation:'none');media.style.animationDuration=(b.speed||4)+'s';
     if(b.type==='icon'){

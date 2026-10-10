@@ -13,9 +13,9 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.resolve(process.env.HOME_DISPLAY_DATA_DIR || __dirname);
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const CONTENT_DIR = path.join(DATA_DIR, 'content');
-const extensions = new Set(['.html', '.css', '.js', '.json', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.mp4', '.webm']);
-const assets = fs.readdirSync(__dirname).filter(name => /\.(html|css|js)$/.test(name) && !['server.js','plugins.js','screens.js','updates.js'].includes(name));
-const protectedAssets = ['index.html', 'admin.html', 'designer.html', 'designer.js', 'studio-extras.js', 'studio-devices.js', 'studio-navigation.js', 'plugins.js', 'screens.js', 'updates.js', 'plugin-mainsail.html', 'plugin-mainsail.js', 'design-display.html', 'design-display.js', 'design-assets.js', 'design-assets.css', 'sw.js', 'lite.js'];
+const extensions = new Set(['.html', '.css', '.js', '.json', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.mp4', '.webm', '.ics']);
+const assets = fs.readdirSync(__dirname).filter(name => /\.(html|css|js)$/.test(name) && !['server.js','plugins.js','screens.js','updates.js','plugin-engine.js','plugin-catalog.js'].includes(name));
+const protectedAssets = ['index.html', 'admin.html', 'designer.html', 'designer.js', 'studio-extras.js', 'studio-devices.js', 'studio-navigation.js', 'plugin-studio.js', 'plugin-engine.js', 'plugin-catalog.js', 'plugin-view.html', 'plugin-view.js', 'plugin-sdk.js', 'plugins.js', 'screens.js', 'updates.js', 'plugin-mainsail.html', 'plugin-mainsail.js', 'design-display.html', 'design-display.js', 'design-assets.js', 'design-assets.css', 'sw.js', 'lite.js'];
 const editableAssets = assets.filter(name => !protectedAssets.includes(name));
 fs.mkdirSync(CONTENT_DIR, { recursive: true });
 if (!fs.existsSync(CONFIG_FILE)) fs.copyFileSync(path.join(__dirname, 'config.example.json'), CONFIG_FILE);
@@ -61,6 +61,7 @@ app.get('/api/screens',(req,res)=>res.json({screens:screens.read().map(s=>({...s
 app.get('/api/version',(req,res)=>res.json({version:updates.version}));
 app.get('/api/fonts',(req,res)=>res.json({fonts:fontFiles().map(name=>({key:'uploaded:'+name,name:name.replace(/^font-[a-f0-9]+-/,'').replace(/\.[^.]+$/,''),url:'/'+name}))}));
 app.get('/api/plugin-status',async(req,res,next)=>{try{let pages=plugins.pages();if(req.query.screen){const screen=screens.find(req.query.screen);if(!screen)return res.status(404).json({error:'Screen not found.'});if(screen.pageIds!==null)pages=pages.filter(p=>screen.pageIds.includes(p.id));}res.set('Cache-Control','no-store').json({statuses:await plugins.statuses(),pages});}catch(error){next(error);}});
+app.get('/api/plugin-view/:id',(req,res)=>{const view=plugins.view(req.params.id);res.status(view?200:404).json(view||{error:'Plugin not found.'});});
 app.get('/api/plugin-data/:id',async(req,res,next)=>{try{const data=await plugins.data(req.params.id);res.set('Cache-Control','no-store').status(data?200:404).json(data||{error:'Plugin not found.'});}catch(error){next(error);}});
 app.get('/runtime-config.js', (req, res) => {
   const settings = readConfig().settings || {};
@@ -72,6 +73,8 @@ app.delete('/api/screens/:id',(req,res)=>{screens.remove(req.params.id);res.json
 app.get('/api/updates',async(req,res)=>res.json({...await updates.check(req.query.check==='1'),state:updates.state(),tokenConfigured:updates.tokenConfigured()}));
 app.post('/api/updates/token',(req,res)=>{try{updates.saveToken(req.body.token);res.json({success:true});}catch(error){res.status(400).json({error:error.message});}});
 app.post('/api/updates/install',async(req,res)=>{if(process.env.HOME_DISPLAY_CONTROL!=='local')return res.status(503).json({error:'Automatic installation requires the standalone Pi setup.'});const update=await updates.check(true);if(!update.available||!update.installable)return res.status(400).json({error:update.message||'No installable update is available.'});execFile('/usr/bin/sudo',['-n','/usr/local/sbin/home-display-control','install_update'],{timeout:15000},error=>{if(error)return res.status(500).json({error:'Update service could not start. Install the latest updater helper on the Pi.'});res.status(202).json({success:true,message:'Update started.'});});});
+app.get('/api/plugin-catalog',(req,res)=>res.json({definitions:plugins.catalog()}));
+app.post('/api/plugin-definitions',(req,res)=>{try{res.json({definition:plugins.installDefinition(req.body)});}catch(error){res.status(400).json({error:error.message});}});
 app.get('/api/plugins',(req,res)=>res.json({plugins:plugins.list()}));
 app.post('/api/plugins',(req,res)=>{try{res.json({plugin:plugins.save(req.body)});}catch(error){res.status(400).json({error:error.message});}});
 app.post('/api/plugins/test',async(req,res)=>{try{res.json(await plugins.test(req.body));}catch(error){res.status(400).json({error:error.message});}});
@@ -104,10 +107,11 @@ app.post('/api/config', (req, res) => {
       if (!color(d.bg) || !color(d.fg) || !color(d.accent) || !Array.isArray(d.blocks) || d.blocks.length > 40) return res.status(400).json({ error: 'Invalid page design.' });
       const ids = new Set();
       for (const b of d.blocks) {
-        if (!b || typeof b.id !== 'string' || ids.has(b.id) || !['clock', 'weather', 'text', 'image', 'video', 'icon'].includes(b.type) || !color(b.colour) || typeof b.content !== 'string' || b.content.length > 2000) return res.status(400).json({ error: 'Invalid design block.' });
+        if (!b || typeof b.id !== 'string' || ids.has(b.id) || !['clock', 'weather', 'text', 'image', 'video', 'icon', 'plugin'].includes(b.type) || !color(b.colour) || typeof b.content !== 'string' || b.content.length > 2000) return res.status(400).json({ error: 'Invalid design block.' });
         const validFont=b.font===undefined||Object.hasOwn(designAssets.fonts,b.font)||(typeof b.font==='string'&&b.font.startsWith('uploaded:')&&fontFiles().includes(b.font.slice(9)));
         if (!validFont || (b.animation !== undefined && !designAssets.animations.includes(b.animation)) || (b.weight !== undefined && !['400','600','700'].includes(b.weight)) || (b.align !== undefined && !['left','center','right'].includes(b.align)) || (b.background !== undefined && b.background !== 'transparent' && !color(b.background)) || (b.speed !== undefined && (!Number.isFinite(b.speed) || b.speed < 1 || b.speed > 20)) || (b.type === 'icon' && !Object.hasOwn(designAssets.icons,b.content))) return res.status(400).json({ error: 'Invalid block style or icon.' });
         ids.add(b.id);
+        if (b.type === 'plugin' && (typeof b.pluginId !== 'string' || !/^plugin_[A-Za-z0-9_-]{1,100}$/.test(b.pluginId))) return res.status(400).json({ error: 'Choose a plugin connection for this block.' });
         if (['x', 'y', 'w', 'h', 'size'].some(key => !Number.isFinite(b[key])) || b.x < 0 || b.y < 0 || b.w < 40 || b.h < 40 || b.x + b.w > 800 || b.y + b.h > 480 || b.size < 12 || b.size > 400) return res.status(400).json({ error: 'Design block must fit within the screen.' });
         if (['image','video'].includes(b.type) && b.content) {
           try { const url = new URL(b.content, 'http://display.local'); if (!['http:', 'https:'].includes(url.protocol)) throw Error(); } catch { return res.status(400).json({ error: 'Invalid image URL.' }); }

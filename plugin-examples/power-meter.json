@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "community.power-meter",
+  "name": "Power meter example",
+  "version": "1.0.0",
+  "description": "An example community plugin that reads a JSON source and works as a page or block.",
+  "adapter": "json",
+  "auth": "none",
+  "sourceRequired": true,
+  "healthPath": "/api/status",
+  "pageFile": "power-meter.html",
+  "fields": [
+    {"key": "title", "label": "Display title", "type": "text", "default": "Home energy"},
+    {"key": "unit", "label": "Unit", "type": "text", "default": "W"}
+  ]
+}

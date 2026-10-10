@@ -181,6 +181,7 @@ with tempfile.TemporaryDirectory(prefix='display-browser-') as data:
             page.wait_for_function("document.getElementById('status').textContent.startsWith('Ready')")
             page.get_by_role('button', name='Plugins', exact=True).click()
             page.locator('#new-plugin').click()
+            page.locator('#plugin-type').select_option('mainsail')
             page.locator('#plugin-name').fill('Workshop printer')
             page.locator('#plugin-source').fill('127.0.0.1:' + str(printer_server.server_port))
             page.locator('#plugin-key').fill('test-key-123')

@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Power meter plugin example</title><style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#0b1324;color:#f1f5fb;font-family:system-ui,sans-serif}body{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center}h1{font-size:clamp(18px,4vw,34px);margin:0 0 12px}#reading{font-size:clamp(28px,10vw,110px);color:#70b7ff}#status{font-size:14px;color:#adbed1}
+</style></head><body><h1 id="title">Home energy</h1><div id="reading">—</div><p id="status">Connecting…</p><script src="/plugin-sdk.js"></script><script>
+HomeDisplayPlugin.watch(function(result){
+  document.getElementById('title').textContent=result.options.title||result.name||'Home energy';
+  document.getElementById('reading').textContent=result.connected&&typeof result.data?.watts==='number'?result.data.watts+' '+(result.options.unit||'W'):'—';
+  document.getElementById('status').textContent=result.message;
+});
+</script></body></html>

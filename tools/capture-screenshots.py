@@ -27,7 +27,7 @@ with tempfile.TemporaryDirectory() as data:
             page.goto(base+'/admin');page.wait_for_function("document.getElementById('status').textContent.startsWith('Ready')")
             page.wait_for_timeout(700);page.screenshot(path=str(output/'studio-designer.png'),full_page=True)
             page.get_by_role('button',name='Screens',exact=True).click();page.get_by_text('Kitchen display',exact=True).wait_for();page.screenshot(path=str(output/'studio-screens.png'),full_page=True)
-            page.get_by_role('button',name='Plugins',exact=True).click();page.locator('#new-plugin').click();page.locator('#plugin-name').fill('Workshop printer');page.locator('#plugin-source').fill('http://printer.local:7125');page.screenshot(path=str(output/'studio-plugins.png'),full_page=True)
+            page.get_by_role('button',name='Plugins',exact=True).click();page.locator('#new-plugin').click();page.locator('#plugin-type').select_option('mainsail');page.locator('#plugin-name').fill('Workshop printer');page.locator('#plugin-source').fill('http://printer.local:7125');page.screenshot(path=str(output/'studio-plugins.png'),full_page=True)
             page.get_by_role('button',name='Weather & schedule',exact=True).click();assert page.locator('#lat').is_visible() if page.locator('#lat').count() else page.locator('#latitude').is_visible()
             page.get_by_role('button',name='Updates',exact=True).click();assert page.locator('#check-updates').is_visible();assert not page.locator('#github-token').is_visible()
             page.set_viewport_size({'width':390,'height':844});page.get_by_role('button',name='Screens',exact=True).click();page.wait_for_timeout(200);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')

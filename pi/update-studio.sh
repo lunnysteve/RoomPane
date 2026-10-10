@@ -5,11 +5,12 @@ SOURCE=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 APP=/opt/home-display/app
 NODE=/opt/home-display/node/bin/node
 [[ -f "$APP/server.js" && -x "$NODE" ]] || { echo 'Standalone installation not found.' >&2; exit 1; }
-files=(server.js plugins.js screens.js updates.js package.json package-lock.json index.html lite.js designer.html designer.js studio-extras.js studio-devices.js studio-navigation.js plugin-mainsail.html plugin-mainsail.js plugin-example.html design-display.html design-display.js design-assets.js design-assets.css studio-sans.ttf studio-serif.ttf studio-mono.ttf studio-heavy.ttf studio-serif-bold.ttf studio-mono-italic.ttf studio-font-license.txt manifest.webmanifest app-icon.svg app-icon-192.png app-icon-512.png sw.js)
+files=(server.js plugins.js plugin-engine.js plugin-catalog.js screens.js updates.js package.json package-lock.json index.html lite.js designer.html designer.js studio-extras.js studio-devices.js studio-navigation.js plugin-studio.js plugin-view.html plugin-view.js plugin-sdk.js plugin-mainsail.html plugin-mainsail.js plugin-example.html design-display.html design-display.js design-assets.js design-assets.css studio-sans.ttf studio-serif.ttf studio-mono.ttf studio-heavy.ttf studio-serif-bold.ttf studio-mono-italic.ttf studio-font-license.txt manifest.webmanifest app-icon.svg app-icon-192.png app-icon-512.png sw.js)
 for file in "${files[@]}"; do [[ -f "$SOURCE/$file" ]] || { echo "Missing $file" >&2; exit 1; }; done
-for file in server.js plugins.js screens.js updates.js lite.js designer.js studio-extras.js studio-devices.js studio-navigation.js plugin-mainsail.js design-display.js design-assets.js sw.js; do "$NODE" --check "$SOURCE/$file"; done
+for file in server.js plugins.js plugin-engine.js plugin-catalog.js screens.js updates.js lite.js designer.js studio-extras.js studio-devices.js studio-navigation.js plugin-studio.js plugin-view.js plugin-sdk.js plugin-mainsail.js design-display.js design-assets.js sw.js; do "$NODE" --check "$SOURCE/$file"; done
 install -d -m 700 /opt/home-display/updates
 BACKUP=$(mktemp -d /opt/home-display/updates/studio-XXXXXXXX)
+MODULES_BACKED_UP=false
 for file in "${files[@]}"; do
   if [[ -f "$APP/$file" ]]; then cp -p "$APP/$file" "$BACKUP/$file"; else touch "$BACKUP/$file.absent"; fi
 done
@@ -18,10 +19,19 @@ rollback() {
   for file in "${files[@]}"; do
     if [[ -f "$BACKUP/$file.absent" ]]; then rm -f -- "$APP/$file"; else cp -p "$BACKUP/$file" "$APP/$file"; fi
   done
+  if [[ "$MODULES_BACKED_UP" == true ]]; then
+    rm -rf -- "$APP/node_modules"
+    mv -- "$BACKUP/node_modules" "$APP/node_modules"
+  fi
   systemctl restart home-display || true
 }
 trap rollback ERR
 for file in "${files[@]}"; do install -o root -g root -m 644 "$SOURCE/$file" "$APP/$file"; done
+if [[ -d "$APP/node_modules" ]]; then
+  mv -- "$APP/node_modules" "$BACKUP/node_modules"
+  MODULES_BACKED_UP=true
+fi
+PATH="/opt/home-display/node/bin:$PATH" /opt/home-display/node/bin/npm ci --omit=dev --ignore-scripts --prefix "$APP"
 install -d -m 755 /usr/local/lib/home-display
 install -m 755 "$SOURCE/pi/fetch-release.py" /usr/local/lib/home-display/fetch-release.py
 install -m 755 "$SOURCE/pi/home-display-control" /usr/local/sbin/home-display-control
