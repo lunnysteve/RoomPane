@@ -21,3 +21,8 @@ github-token.json
 update-status.json
 
 plugin-definitions.json
+
+# Local tool state
+.claude/settings.local.json
+.claude/.headroom*
+.serena/

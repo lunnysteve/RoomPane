@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-until curl --fail --silent http://127.0.0.1:3000/api/health >/dev/null; do sleep 2; done
-exec chromium --ozone-platform=wayland --disable-gpu \
-  --kiosk --no-first-run --noerrdialogs --disable-session-crashed-bubble \
-  --disable-features=Translate --password-store=basic \
-  --user-data-dir="$HOME/.config/home-display-wayland-chromium" \
-  http://127.0.0.1:3000/
