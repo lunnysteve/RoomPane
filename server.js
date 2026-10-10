@@ -15,7 +15,7 @@ const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const CONTENT_DIR = path.join(DATA_DIR, 'content');
 const extensions = new Set(['.html', '.css', '.js', '.json', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.mp4', '.webm']);
 const assets = fs.readdirSync(__dirname).filter(name => /\.(html|css|js)$/.test(name) && !['server.js','plugins.js','screens.js','updates.js'].includes(name));
-const protectedAssets = ['index.html', 'admin.html', 'designer.html', 'designer.js', 'studio-extras.js', 'studio-devices.js', 'plugins.js', 'screens.js', 'updates.js', 'plugin-mainsail.html', 'plugin-mainsail.js', 'design-display.html', 'design-display.js', 'design-assets.js', 'design-assets.css', 'sw.js', 'lite.js'];
+const protectedAssets = ['index.html', 'admin.html', 'designer.html', 'designer.js', 'studio-extras.js', 'studio-devices.js', 'studio-navigation.js', 'plugins.js', 'screens.js', 'updates.js', 'plugin-mainsail.html', 'plugin-mainsail.js', 'design-display.html', 'design-display.js', 'design-assets.js', 'design-assets.css', 'sw.js', 'lite.js'];
 const editableAssets = assets.filter(name => !protectedAssets.includes(name));
 fs.mkdirSync(CONTENT_DIR, { recursive: true });
 if (!fs.existsSync(CONFIG_FILE)) fs.copyFileSync(path.join(__dirname, 'config.example.json'), CONFIG_FILE);

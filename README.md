@@ -1,64 +1,121 @@
+<p align="center"><img src="app-icon.svg" width="88" alt="Home Display logo"></p>
+
 # Home Display
 
-A self-hosted home dashboard with a visual page designer, custom HTML pages,
-single-page home plugins and multiple screen profiles. Run the server on a
-Raspberry Pi, then open its screen URLs on other Pis, browsers or Android TVs.
+**Your home dashboard, designed by you.**
 
-## Features
+Turn a Raspberry Pi and a screen into a display for clocks, weather, photos, animated layouts and connected devices. Design pages in your browser, choose what each screen shows, and reuse the same dashboard on an Android TV.
 
-- Clock, weather, text, image, video and icon blocks with colours and animation.
-- Bundled and uploaded fonts, image/animation uploads, and an HTML editor.
-- Mainsail/Moonraker printer plugin with connection-based page visibility.
-- Custom single HTML plugin pages and a small source-data API.
-- Independent screen playlists and visible endpoint URLs.
-- Versioned GitHub releases, update checks and application rollback.
-- Android TV viewer and screensaver APK.
+Home Display runs on your own hardware. A Pi can host the dashboard and drive its attached display, or you can host the server separately and open screen URLs on other devices.
 
-## Install on a Pi
+[Installation](INSTALL.md) · [Downloads](https://github.com/lunnysteve/home-display/releases) · [Plugin guide](PLUGINS.md) · [Android TV](android-tv/README.md) · [Changelog](CHANGELOG.md)
 
-Use a fresh Raspberry Pi OS Lite card (Bookworm or newer), configure Wi-Fi and
-SSH in Raspberry Pi Imager, then copy or clone the project and run:
+![Example dashboard with a large clock, weather and a welcome message](docs/images/display-preview.png)
 
-```sh
+## Make it yours
+
+| Feature | What you can do |
+| --- | --- |
+| Page designer | Arrange clock, weather, text, image and icon blocks on an 800 × 480 canvas. |
+| Fonts and themes | Choose colours, enlarge text, use bundled fonts or install your own TTF, OTF, WOFF or WOFF2 fonts. |
+| Images and motion | Upload photos, GIFs, SVGs and silent looping videos; animate individual blocks. |
+| HTML editor | Edit a page’s HTML, CSS and JavaScript, with a draft preview before saving. |
+| Multiple screens | Give each display its own page selection and a URL you can copy. |
+| Connected devices | Show Mainsail/Moonraker printer progress and temperatures. Hide its page when the source disconnects. |
+| Custom plugins | Build a single HTML page for another device or service, with optional source data fetched by the server. |
+| Updates | Check versioned GitHub releases and install application updates on supported Pi installations, with rollback if startup fails. |
+| Android TV | View a screen when the app opens, or select Home Display as a system screensaver where supported. |
+
+## Design in your browser
+
+The Studio separates **Pages & designer**, **Screens**, **Plugins**, **Weather & schedule**, and **Updates**. Page colours and fonts stay beside the canvas; weather location and daily sleep times have their own settings area.
+
+![Studio with page list, visual designer and theme controls](docs/images/studio-designer.png)
+
+Add a page, place its blocks, choose fonts and colours, then select **Save page & settings** to send changes to the display. Screenshots use example pages and preview weather; your layout and live data will vary.
+
+## Get started on a Raspberry Pi
+
+You need a **Raspberry Pi 2 or newer**, an HDMI or DSI display, a microSD card and a suitable power supply. Flash **Raspberry Pi OS Lite, Bookworm or newer**, using Raspberry Pi Imager. Use 32-bit Lite on a Pi 2. Set a username, configure networking and enable SSH.
+
+On the Pi:
+
+```bash
+sudo apt update
+sudo apt install -y git
+git clone https://github.com/lunnysteve/home-display.git
+cd home-display
 sudo bash install.sh
 sudo reboot
 ```
 
-Open `http://YOUR-PI:3000/admin` and log in as `admin` with the password chosen
-during installation. The default display is `http://YOUR-PI:3000/`. Screen
-profiles have URLs such as `http://YOUR-PI:3000/screen/living-room`.
+The repository is currently private while the project is prepared for sharing; cloning and downloading releases requires access until it is made public. These commands also work unchanged once it is public.
 
-Full setup and the Pi 2 DSI workaround: [INSTALL.md](INSTALL.md).
-Use `--server-only` when hosting the server without the Pi kiosk.
+Choose an admin password during installation. After reboot, visit **`http://YOUR-PI:3000/admin`** from another device on the same network and sign in as **`admin`**. The attached display opens the dashboard automatically.
 
-## Screens, plugins and updates
+For a Pi that only hosts the server, use `sudo bash install.sh --server-only`. The [installation guide](INSTALL.md) covers hardware, the Pi 2 DSI workaround, backups and troubleshooting. The installer targets Pi ARM hardware; the Node application can also run separately for development or other hosting. Network access is needed for installation and live weather.
 
-Open **Screens & updates** to create screen profiles, copy their URLs and check
-releases. Runtime state stays separate from application files and is preserved
-across updates. This repository currently remains private; configure a read-only
-GitHub token on the server to check and download private releases.
+## One server, more screens
 
-- [Plugin API and starter page](PLUGINS.md)
-- [Release/versioning and private GitHub access](RELEASING.md)
-- [Android TV setup and APK builds](android-tv/README.md)
-- [Changelog](CHANGELOG.md)
+Create profiles under **Screens** and choose which pages and plugins each one includes. Open its URL on a Pi kiosk, browser or Android TV connected to the server.
 
-The TV APK supports viewing on app launch and a system screensaver service.
-Screensaver support depends on the TV firmware; device testing is still needed.
+![Screen profiles with display URLs and playlist controls](docs/images/studio-screens.png)
 
-## Development
+| Endpoint | Purpose |
+| --- | --- |
+| `http://YOUR-PI:3000/` | Default display rotation. |
+| `http://YOUR-PI:3000/admin` | Studio and administration. |
+| `http://YOUR-PI:3000/screen/living-room` | A named screen profile, after you create it. |
 
-```sh
+Profiles share the page library and weather settings. Each profile selects its own playlist; devices need network access to the server.
+
+## Connect your home
+
+The built-in **Mainsail / Moonraker** plugin connects to your printer’s Moonraker API, usually `http://PRINTER-IP:7125`. Enter its address, supply an API key if needed, and use **Test connection**. Enable **Only show when connected** to remove the page from rotation while the source is unavailable.
+
+![Plugin setup with source address, connection test and connected-only visibility](docs/images/studio-plugins.png)
+
+To connect another service, start with the [plugin guide and example HTML page](PLUGINS.md). Custom pages can use the server’s source-data API without exposing source credentials to the display browser. Home Assistant and other integrations can be built through this interface; they are not bundled plugins yet.
+
+## Android TV
+
+Download **`home-display-tv-vVERSION.apk`** from [Releases](https://github.com/lunnysteve/home-display/releases), sideload it onto your TV, and open **Home Display**. Enter the server URL, load its profiles and choose a screen.
+
+- Leave automatic viewing enabled to show the screen when the app opens.
+- For a screensaver, choose Home Display in the TV’s system screensaver settings.
+- Use Back or Menu to return to the app menu.
+
+Android 6 or newer and a working Android System WebView are required. Screensaver availability depends on TV firmware. The APK is built and signed; playback and screensaver behaviour still need verification on a physical TV. See [Android TV setup](android-tv/README.md).
+
+## Updates and your data
+
+**Updates** shows the installed version, checks the latest stable release, and offers installation when a newer compatible release is available. **Public releases need no GitHub token.** Private releases use the optional repository access setting with a token restricted to **Contents: read-only**.
+
+Standalone Pi updates preserve settings, uploads, installed fonts, screens and plugin configuration in `/var/lib/home-display`. The updater verifies the release checksum and restores the previous application if its health check fails. Back up runtime data and `/etc/home-display` before replacing a card or making major changes. See [release details](RELEASING.md).
+
+Admin access is intended for a trusted local network; use HTTPS when accessing it through a proxy. Installable web-app features on phones require trusted HTTPS. Uploaded HTML and plugins run code supplied by the owner.
+
+## Development and contributions
+
+Use Node.js 22:
+
+```bash
 npm ci
 npm test
 npm start
 ```
 
-Node 22 is required for the supported server installation. Browser integration
-checks use Python with Playwright and Pillow; run `python tests/designer-browser.py`.
-Updater replacement/rollback checks use `python tests/updater-rollback.py`.
+Open `http://localhost:3000/admin`. The Pi installer configures authentication; a development server only enables it when an admin password hash is configured.
 
-Keep the admin interface on a trusted LAN or put it behind HTTPS. Uploaded HTML
-and plugins are trusted owner code. Installable web-app support needs trusted
-HTTPS for phone installation. Runtime settings, uploaded content, source keys,
-GitHub tokens and Android signing keys are excluded from releases.
+Browser checks use Python, Playwright and Pillow:
+
+```bash
+python -m pip install playwright pillow
+python -m playwright install chromium
+python tests/designer-browser.py
+python tests/updater-rollback.py
+```
+
+Bug reports, hardware test results, documentation improvements and plugin ideas are welcome. Include your device model, OS version, application version and steps to reproduce an issue. Keep credentials, personal settings and uploaded media out of contributions.
+
+To regenerate the example screenshots and check Studio navigation, run `python tools/capture-screenshots.py`. This uses temporary example data and leaves your saved dashboard settings intact.

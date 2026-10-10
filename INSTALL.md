@@ -29,7 +29,7 @@ Pi 2 is a compatibility target, not a performance guarantee. The kiosk uses soft
 
 The display opens `http://127.0.0.1:3000/`. From a phone on the same network, open `http://YOUR-HOSTNAME.local:3000/admin` or `http://PI-IP:3000/admin`. Sign in as `admin` with the password you chose. Set weather latitude, longitude, timezone, page rotation, and sleep/wake times. Save the configuration.
 
-The repository is currently private, so cloning requires your GitHub access. There is no public download or curl installation command yet.
+While the repository is private, cloning and release downloads require GitHub access. Once public, the clone command in [README.md](README.md) needs no authentication. Public update checks and downloads need no token; private releases use the optional access setting under **Updates**.
 
 ## Trial alongside an existing kiosk
 

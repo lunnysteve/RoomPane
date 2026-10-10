@@ -5,9 +5,9 @@ SOURCE=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 APP=/opt/home-display/app
 NODE=/opt/home-display/node/bin/node
 [[ -f "$APP/server.js" && -x "$NODE" ]] || { echo 'Standalone installation not found.' >&2; exit 1; }
-files=(server.js plugins.js screens.js updates.js package.json package-lock.json index.html lite.js designer.html designer.js studio-extras.js studio-devices.js plugin-mainsail.html plugin-mainsail.js plugin-example.html design-display.html design-display.js design-assets.js design-assets.css studio-sans.ttf studio-serif.ttf studio-mono.ttf studio-heavy.ttf studio-serif-bold.ttf studio-mono-italic.ttf studio-font-license.txt manifest.webmanifest app-icon.svg app-icon-192.png app-icon-512.png sw.js)
+files=(server.js plugins.js screens.js updates.js package.json package-lock.json index.html lite.js designer.html designer.js studio-extras.js studio-devices.js studio-navigation.js plugin-mainsail.html plugin-mainsail.js plugin-example.html design-display.html design-display.js design-assets.js design-assets.css studio-sans.ttf studio-serif.ttf studio-mono.ttf studio-heavy.ttf studio-serif-bold.ttf studio-mono-italic.ttf studio-font-license.txt manifest.webmanifest app-icon.svg app-icon-192.png app-icon-512.png sw.js)
 for file in "${files[@]}"; do [[ -f "$SOURCE/$file" ]] || { echo "Missing $file" >&2; exit 1; }; done
-for file in server.js plugins.js screens.js updates.js lite.js designer.js studio-extras.js studio-devices.js plugin-mainsail.js design-display.js design-assets.js sw.js; do "$NODE" --check "$SOURCE/$file"; done
+for file in server.js plugins.js screens.js updates.js lite.js designer.js studio-extras.js studio-devices.js studio-navigation.js plugin-mainsail.js design-display.js design-assets.js sw.js; do "$NODE" --check "$SOURCE/$file"; done
 install -d -m 700 /opt/home-display/updates
 BACKUP=$(mktemp -d /opt/home-display/updates/studio-XXXXXXXX)
 for file in "${files[@]}"; do

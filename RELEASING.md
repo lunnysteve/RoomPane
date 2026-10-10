@@ -12,7 +12,7 @@ match the tag; the updater rejects mismatches, older versions and prereleases.
 
 ## Pi update flow
 
-Studio → **Screens & updates** displays the installed version, checks the latest
+Studio → **Updates** displays the installed version, checks the latest
 GitHub release, links release notes and shows **Update available** when applicable.
 Updates require the standalone installer and its supplied root update helper.
 The root service independently retrieves the configured repository's latest
