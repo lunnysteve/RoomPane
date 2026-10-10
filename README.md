@@ -137,3 +137,7 @@ python tools/capture-screenshots.py   # regenerates the images in this README
 Bug reports, hardware test results, documentation fixes and plugin ideas are all welcome. When you report a problem, include your device model, OS version, Home Display version (shown in the Studio header) and the steps to reproduce it. Please keep credentials, personal settings and uploaded media out of issues and pull requests.
 
 Release steps are in [RELEASING.md](RELEASING.md).
+
+## Licence
+
+Home Display is released under the [MIT Licence](LICENSE). The bundled DejaVu fonts have their own licence in [studio-font-license.txt](studio-font-license.txt).
