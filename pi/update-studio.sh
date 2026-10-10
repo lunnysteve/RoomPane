@@ -28,6 +28,10 @@ rollback() {
     rm -rf -- "$APP/node_modules"
     mv -- "$BACKUP/node_modules" "$APP/node_modules"
   fi
+  for i in "${!system_files[@]}"; do
+    if [[ -f "$BACKUP/system-$i.absent" ]]; then rm -f -- "${system_files[$i]}"; else cp -p "$BACKUP/system-$i" "${system_files[$i]}"; fi
+  done
+  systemctl daemon-reload || true
   systemctl restart home-display || true
 }
 trap rollback ERR
@@ -40,15 +44,11 @@ PATH="/opt/home-display/node/bin:$PATH" /opt/home-display/node/bin/npm ci --omit
 install -d -m 755 /usr/local/lib/home-display
 install -m 755 "$SOURCE/pi/fetch-release.py" /usr/local/lib/home-display/fetch-release.py
 install -m 755 "$SOURCE/pi/home-display-control" /usr/local/sbin/home-display-control
+visudo -cf "$SOURCE/pi/home-display.sudoers"
 install -m 440 "$SOURCE/pi/home-display.sudoers" /etc/sudoers.d/home-display
-visudo -cf /etc/sudoers.d/home-display
 install -m 644 "$SOURCE/pi/home-display-update.service" /etc/systemd/system/home-display-update.service
 systemctl daemon-reload
-  for i in "${!system_files[@]}"; do
-    if [[ -f "$BACKUP/system-$i.absent" ]]; then rm -f -- "${system_files[$i]}"; else cp -p "$BACKUP/system-$i" "${system_files[$i]}"; fi
-  done
-  systemctl daemon-reload
-  systemctl restart home-display
+systemctl restart home-display
 ready=false
 for attempt in {1..30}; do
   if curl --fail --silent http://127.0.0.1:3000/api/health >/dev/null; then ready=true; break; fi
