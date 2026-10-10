@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NASA APOD</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* Bundled DejaVu fonts so pages render the same without internet access. */
+    @font-face { font-family: 'Display Sans'; src: url('/studio-sans.ttf') format('truetype'); font-weight: 100 600; font-display: swap; }
+    @font-face { font-family: 'Display Sans'; src: url('/studio-heavy.ttf') format('truetype'); font-weight: 700 900; font-display: swap; }
+  </style>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     
@@ -15,7 +17,7 @@
       height: 100vh;
       background: #000;
       color: #fff;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Display Sans', sans-serif;
       overflow: hidden;
       display: flex;
       justify-content: center;
@@ -147,9 +149,17 @@
   <script>
     async function fetchNASA() {
       try {
-        const url = 'https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY';
-        const r = await fetch(url);
-        const data = await r.json();
+        // DEMO_KEY allows about 30 requests an hour per IP, so cache the picture for the day.
+        // Add ?key=YOUR_KEY (free from api.nasa.gov) to the page URL to use your own key.
+        const today = new Date().toISOString().slice(0, 10);
+        let data = JSON.parse(localStorage.getItem('nasa-apod') || 'null');
+        if (!data || data.fetched !== today) {
+          const key = new URLSearchParams(location.search).get('key') || 'DEMO_KEY';
+          const r = await fetch('https://api.nasa.gov/planetary/apod?api_key=' + encodeURIComponent(key));
+          if (!r.ok) throw new Error('APOD request failed: ' + r.status);
+          data = { ...await r.json(), fetched: today };
+          localStorage.setItem('nasa-apod', JSON.stringify(data));
+        }
         
         const bgImage = document.getElementById('bgImage');
         const videoContainer = document.getElementById('videoContainer');
@@ -167,7 +177,7 @@
         }
 
         if (data.date) {
-          const d = new Date(data.date);
+          const d = new Date(data.date + 'T12:00:00');
           const formattedDate = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
           metaEl.textContent = `NASA APOD · ${formattedDate}`;
         }
@@ -175,7 +185,12 @@
         if (data.media_type === 'video') {
           videoContainer.style.display = 'block';
           bgImage.style.display = 'none';
-          videoContainer.innerHTML = `<iframe src="${data.url}&autoplay=1&mute=1&controls=0&loop=1" allow="autoplay"></iframe>`;
+          const video = new URL(data.url);
+          for (const [name, value] of [['autoplay', 1], ['mute', 1], ['controls', 0], ['loop', 1]]) video.searchParams.set(name, value);
+          const frame = document.createElement('iframe');
+          frame.src = video.href;
+          frame.allow = 'autoplay';
+          videoContainer.replaceChildren(frame);
         } else {
           const imgUrl = data.hdurl || data.url;
           if (imgUrl) {

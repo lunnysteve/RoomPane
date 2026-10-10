@@ -30,8 +30,8 @@ $('legacy').querySelector('.hint').textContent='This existing page is an HTML pr
 makeEditable.onclick=()=>{const p=page();if(!p)return;const original=p.originalUrl||p.url;
 const widget=(type,x,y,w,h,size,content='')=>({id:'block_'+Date.now()+'_'+Math.random().toString(16).slice(2),type,x,y,w,h,size,colour:'#f1f5fb',content});
 const blocks=[];
-if(/(^|\/)(display|time|weather-clock)\.html(?:[?#]|$)/.test(original))blocks.push(widget('clock',30,60,740,180,96));
-if(/(^|\/)(display|weather|humidity|weather-clock|forecast|large_weather)\.html(?:[?#]|$)/.test(original))blocks.push(widget('weather',100,260,600,180,40));
+if(/(^|\/)(display|time|large_time)\.html(?:[?#]|$)/.test(original))blocks.push(widget('clock',30,60,740,180,96));
+if(/(^|\/)(display|weather|humidity|forecast|large_weather)\.html(?:[?#]|$)/.test(original))blocks.push(widget('weather',100,260,600,180,40));
 if(!blocks.length)blocks.push(widget('text',70,120,660,220,48,p.name));
 designerClosed=false;p.originalUrl=original;p.url='design-display.html?id='+encodeURIComponent(p.id);p.design={theme:'midnight',bg:themes.midnight[0],fg:themes.midnight[1],accent:themes.midnight[2],blocks};blockId=blocks[0].id;changed();render();message('Editable layout ready. Click a block to select it, then save when ready. Original HTML is retained.');};
 function renderPages(){const list=$('pages');list.replaceChildren();config.pages.forEach(p=>{const b=document.createElement('button');b.className='page'+(p.id===selectedId?' selected':'');b.textContent=(p.active?'● ':'○ ')+p.name;b.onclick=()=>{selectedId=p.id;blockId=null;designerClosed=false;render();};list.append(b);});}

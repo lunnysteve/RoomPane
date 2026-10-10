@@ -4,9 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>School Countdown</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* Bundled DejaVu fonts so pages render the same without internet access. */
+    @font-face { font-family: 'Display Sans'; src: url('/studio-sans.ttf') format('truetype'); font-weight: 100 600; font-display: swap; }
+    @font-face { font-family: 'Display Sans'; src: url('/studio-heavy.ttf') format('truetype'); font-weight: 700 900; font-display: swap; }
+  </style>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -21,7 +23,7 @@
       width: 100vw; height: 100vh;
       background: var(--bg);
       color: var(--fg);
-      font-family: 'Inter', sans-serif;
+      font-family: 'Display Sans', sans-serif;
       font-weight: 700;
       overflow: hidden;
       display: flex;
