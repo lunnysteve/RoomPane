@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.1
+
+- Fix `pi/update-studio.sh` putting the previous updater helpers back after a successful run, which stopped the 1.3.0 helper migration taking effect. A failed run now restores them, and the new sudoers file is checked before it is installed.
+
 ## 1.3.0
 
 - Encrypted Studio backup/restore for settings, media, fonts, screens and plugin connections; validates before restoring and retains previous data for recovery.
