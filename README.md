@@ -48,17 +48,21 @@ If the Pi should only host the server, with no attached screen, use `sudo bash i
 
 ## Design your pages
 
-The **Studio** at `/admin` has five sections: **Pages & designer**, **Screens**, **Plugins**, **Weather & schedule** and **Updates**.
+The **Studio** at `/admin` has five sections: **Pages**, **Screens**, **Plugins**, **Settings** and **Updates**. It works on a phone as well as a computer.
 
-![The Studio page designer with the page list, live canvas and style settings](docs/images/studio-designer.png)
+**Pages** shows your rotation with live thumbnails. Drag pages into order, switch them on or off, or give a page a schedule, such as weekday mornings only. **Add a page** brings back any ready-made page or adds a web address.
 
-To design a page, add it, place blocks on the canvas, and choose fonts and colours. Then select **Save page & settings** and the display updates.
+![The Studio page list with live thumbnails, on/off switches and drag handles](docs/images/studio-pages.png)
+
+Tap a page to edit it. On a designed page, add blocks, drag them into place, and choose fonts and colours. Changes collect in a bar at the bottom of the screen until you select **Save changes**.
+
+![The page designer with the canvas, block settings and page style](docs/images/studio-designer.png)
 
 ## Run more than one screen
 
-Under **Screens**, create a profile for each display and choose which pages it shows. Open the profile's URL on a Pi, in any browser, or in the Android TV app.
+**Screens** shows the display's network address with a QR code to scan from a phone or TV. Create a profile for each extra display and choose which pages it shows. Screens also has buttons to turn the screen off, restart the display browser or reboot the Pi.
 
-![Screen profiles with their display URLs and page selection](docs/images/studio-screens.png)
+![Screens with the network address, QR code, screen profiles and display controls](docs/images/studio-screens.png)
 
 | URL | What it shows |
 | --- | --- |
@@ -116,6 +120,7 @@ The browser tests use Python, Playwright and Pillow:
 ```bash
 python -m pip install playwright pillow
 python -m playwright install chromium
+python tests/studio-browser.py
 python tests/designer-browser.py
 python tests/plugin-browser.py
 python tests/updater-rollback.py
@@ -126,7 +131,7 @@ python tools/capture-screenshots.py   # regenerates the images in this README
 | --- | --- |
 | `server.js` | Express server, API and admin authentication |
 | `*.html`, `lite.js`, `lite.css` | Display pages and the shared lightweight renderer |
-| `designer.*`, `studio-*.js`, `plugin-*.js` | The Studio and the plugin system |
+| `studio.*`, `plugin-*.js` | The Studio and the plugin system |
 | `app-files.json` | Core files that the Studio can't overwrite |
 | `pi/` | Installer helpers, systemd units and kiosk session |
 | `android-tv/` | Android TV viewer and screensaver |
@@ -134,7 +139,7 @@ python tools/capture-screenshots.py   # regenerates the images in this README
 
 ## Contributing
 
-Bug reports, hardware test results, documentation fixes and plugin ideas are all welcome. When you report a problem, include your device model, OS version, Home Display version (shown in the Studio header) and the steps to reproduce it. Please keep credentials, personal settings and uploaded media out of issues and pull requests.
+Bug reports, hardware test results, documentation fixes and plugin ideas are all welcome. When you report a problem, include your device model, OS version, Home Display version (shown under Updates) and the steps to reproduce it. Please keep credentials, personal settings and uploaded media out of issues and pull requests.
 
 Release steps are in [RELEASING.md](RELEASING.md).
 

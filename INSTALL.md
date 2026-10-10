@@ -100,16 +100,17 @@ The script backs up the boot configuration. To undo the change, run it with
 `--restore` and reboot. This workaround is specific to the tested Pi 2 setup;
 the installer does not apply it automatically to other models.
 
-## Visual page designer and controller app
+## Using the Studio
 
-Open `/admin` for Home Display Studio. Add a designer page, then place clock,
-weather, text and image blocks by dragging or entering coordinates. Themes and
-colours apply to designer pages. Existing HTML pages remain in the rotation and
-can be edited through the HTML editor in Studio. Preview draft lets you check
-HTML before publishing; Save HTML publishes that file immediately. Save changes
-publishes designer layouts and settings separately.
-Search for a weather location or enter coordinates and an IANA timezone.
-Location search and weather use Open-Meteo and need internet access.
+Open `/admin` for Home Display Studio. It has five sections:
+
+- **Pages** lists the rotation with live thumbnails. Drag to reorder, switch pages on or off, and tap a page to edit its name, duration and schedule (for example 08:00–17:59 on weekdays). **Add a page** brings back any ready-made page or adds a web address; **Design a page** starts a blank layout.
+- **Screens** shows the display's network address with a QR code, screen profiles for other displays, and controls to turn the screen off, restart the browser or reboot the Pi.
+- **Plugins** manages connections to printers, Home Assistant, photos and calendars.
+- **Settings** holds the weather location, the nightly screen-off time, page transitions, installed fonts and uploaded files.
+- **Updates** checks for and installs new releases.
+
+Changes to pages and settings collect in a bar at the bottom of the screen: **Save changes** publishes them and **Discard** reverts to the last save. The HTML editor (open a ready-made page and choose **Edit HTML**) saves files separately and publishes immediately. Location search and weather use Open-Meteo and need internet access.
 
 Designer blocks support bundled sans, serif and monospace fonts, font weight,
 alignment, text/icon colours and optional background fills. Add still or animated
@@ -123,8 +124,8 @@ on the browser. Font redistribution notices are in `studio-font-license.txt`.
 Use **Plugins** for the Mainsail/Moonraker printer page or a custom single HTML
 page. Configure its source, test the connection, and optionally hide it whenever
 the source is disconnected. See `PLUGINS.md` for the page API and starter template.
-Studio also has Close and Cancel controls and font installation (TTF, OTF, WOFF
-or WOFF2; maximum 4 MB). Font uploads persist alongside other uploaded assets.
+Fonts (TTF, OTF, WOFF or WOFF2; maximum 4 MB) are installed under Settings and
+persist alongside other uploaded assets.
 
 The controller has a web app manifest, icons and an Install app button. For
 phone installation, serve it through trusted HTTPS (for example an existing

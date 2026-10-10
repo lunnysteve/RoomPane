@@ -15,18 +15,18 @@ These are examples of the same plugin system. The community installer is not tie
 
 ## Set up a connection
 
-1. Open **Studio → Plugins → Add plugin**.
+1. Open **Studio → Plugins → Add a plugin**.
 2. Select a definition and name this connection. You can create multiple connections from one definition.
 3. Enter its source and settings. Use **Test connection** for a real request from the display server.
 4. Choose **Include as a full page in rotation** if you want a standalone page.
 5. Choose **Only show when source connected** if the integration should disappear when unavailable.
 6. Save the plugin. Use **Screens** to choose which displays include its full page.
 
-Saving a connection is immediate. Page designer changes still need **Save page & settings**.
+Saving a connection is immediate. Page designer changes still need **Save changes** in the bar at the bottom of the Studio.
 
 ### Use a plugin inside a designed page
 
-1. Open **Pages & designer** and select or design a page.
+1. Open **Pages** and select or design a page.
 2. Choose **+ Klipper / Moonraker**, **+ Home Assistant**, **+ Photos**, **+ Calendar**, or the name of an installed community definition.
 3. If no enabled connection exists, Studio opens its setup. Save it to return to your page with the block added.
 4. Move and resize the block. Select **Plugin connection** in its properties to switch between configured instances.

@@ -43,9 +43,10 @@ with tempfile.TemporaryDirectory() as data:
             except OSError:time.sleep(.1)
         with sync_playwright() as pw:
             browser=pw.chromium.launch();errors=[]
-            # Repeatable clock and weather; the real pages, renderer and editor remain in use.
+            # Repeatable clock and weather; the real pages, renderer and editor remain in use. Service workers
+            # are blocked so routes apply (Playwright then reports a harmless error from sandboxed frames).
             def open_page(viewport,at,scale=1):
-                page=browser.new_page(viewport=viewport,device_scale_factor=scale);page.on('pageerror',lambda e:errors.append(str(e)))
+                page=browser.new_page(viewport=viewport,device_scale_factor=scale,service_workers='block');page.on('pageerror',lambda e:'Service worker is disabled' in str(e) or errors.append(str(e)))
                 page.clock.install(time=at);page.route('**/api.open-meteo.com/**',lambda route:route.fulfill(json=weather(at.hour<18)));return page
             with tempfile.TemporaryDirectory() as shots:
                 captured=[]
@@ -53,14 +54,21 @@ with tempfile.TemporaryDirectory() as data:
                     page=open_page({'width':800,'height':480},at,2);page.goto(base+'/'+name);page.wait_for_timeout(1500)
                     captured.append(Path(shots,f'{len(captured)}.png'));page.screenshot(path=str(captured[-1]));page.close()
                 gallery(captured,output/'display-preview.png')
-            page=open_page({'width':1440,'height':1000},MORNING)
+            page=open_page({'width':1280,'height':860},MORNING)
+            # Show a typical Pi address rather than this computer's hostname.
+            page.route('**/api/device',lambda route:route.fulfill(json={'addresses':['http://raspberrypi.local:3000','http://192.168.1.50:3000'],'controls':True,'manualSleep':False}))
             page.goto(base+'/admin');page.wait_for_function("document.getElementById('status').textContent.startsWith('Ready')")
-            page.wait_for_timeout(700);page.screenshot(path=str(output/'studio-designer.png'),full_page=True)
-            page.get_by_role('button',name='Screens',exact=True).click();page.get_by_text('Kitchen display',exact=True).wait_for();page.screenshot(path=str(output/'studio-screens.png'),full_page=True)
+            idle=lambda:page.wait_for_function("document.getElementById('save-bar').hidden",timeout=10000)
+            page.wait_for_timeout(2500);idle();page.screenshot(path=str(output/'studio-pages.png'))
+            page.locator('.page-open',has_text='Kitchen morning').click();page.locator('#stage .block').nth(2).click();page.wait_for_timeout(500)
+            page.screenshot(path=str(output/'studio-designer.png'),full_page=True)
+            page.get_by_role('button',name='Screens',exact=True).click();page.get_by_text('Kitchen display',exact=True).wait_for();page.wait_for_function("document.getElementById('qr').naturalWidth>0");page.screenshot(path=str(output/'studio-screens.png'),full_page=True)
             page.get_by_role('button',name='Plugins',exact=True).click();page.locator('#new-plugin').click();page.locator('#plugin-type').select_option('mainsail');page.locator('#plugin-name').fill('Workshop printer');page.locator('#plugin-source').fill('http://printer.local:7125');page.screenshot(path=str(output/'studio-plugins.png'),full_page=True)
-            page.get_by_role('button',name='Weather & schedule',exact=True).click();assert page.locator('#lat').is_visible() if page.locator('#lat').count() else page.locator('#latitude').is_visible()
-            page.get_by_role('button',name='Updates',exact=True).click();assert page.locator('#check-updates').is_visible();assert not page.locator('#github-token').is_visible()
-            page.set_viewport_size({'width':390,'height':844});page.get_by_role('button',name='Screens',exact=True).click();page.wait_for_timeout(200);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+            page.get_by_role('button',name='Settings',exact=True).click();assert page.locator('#latitude').is_visible()
+            page.get_by_role('button',name='Updates',exact=True).click();assert page.locator('#check-updates').is_visible()
+            page.set_viewport_size({'width':390,'height':844})
+            for section in ['Pages','Screens','Plugins','Settings','Updates']:
+                page.get_by_role('button',name=section,exact=True).click();page.wait_for_timeout(150);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),section
             assert not errors,errors
-            browser.close();print('Screenshots captured; navigation, mobile width and optional token controls verified.')
+            browser.close();print('Screenshots captured; navigation and mobile width verified.')
     finally:process.terminate();process.wait()

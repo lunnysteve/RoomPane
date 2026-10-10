@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Redesigned Studio: a page list with live thumbnails, drag-to-reorder and on/off switches; a full-width page editor; one save bar with Discard; Settings for location, schedule, fonts and files.
+- Per-page schedules (hours and days) and adding any ready-made page or web address, ported from the old admin console, which is removed.
+- Screens shows the Pi's network address with a QR code, plus screen off/on, browser restart and reboot controls.
+- The private-repository token only appears under Updates when it is needed.
+- Countdown page no longer crashes once the countdown has finished.
+- Dependencies updated to fix security advisories in multer, proxy-addr and qs.
 - Admin passwords are hashed with salted scrypt (`node password.js`); existing SHA-256 hashes still work.
 - The server warns at startup when no admin password is configured.
 - Uploading a file with an existing name keeps both files unless the upload explicitly replaces it.
