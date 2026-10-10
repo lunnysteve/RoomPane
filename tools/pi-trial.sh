@@ -10,6 +10,8 @@ case "$(uname -m)" in
 esac
 mkdir "$WORK/app" "$WORK/node"
 tar -xzf "$ARCHIVE" -C "$WORK/app"
+# Release archives omit tests; run the checkout's tests against the packaged app.
+cp -r -- "$(dirname -- "${BASH_SOURCE[0]}")/../tests" "$WORK/app/tests"
 BASE=https://nodejs.org/dist/latest-v22.x
 curl -fsSL "$BASE/SHASUMS256.txt" -o "$WORK/SHASUMS256.txt"
 FILE=$(awk -v arch="$ARCH" '$2 ~ ("^node-v22\\.[0-9]+\\.[0-9]+-linux-" arch "\\.tar\\.xz$") {print $2}' "$WORK/SHASUMS256.txt")
