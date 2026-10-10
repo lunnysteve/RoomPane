@@ -305,7 +305,7 @@
       activePages.forEach((p, idx) => {
         const frame = document.createElement('iframe');
         frame.id = 'iframe_' + p.id;
-        frame.src = p.url;
+    frame.src = new URL(p.url, location.origin + '/').href;
         if (idx === 0) {
           frame.className = 'active';
         }

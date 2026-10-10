@@ -243,6 +243,10 @@ with tempfile.TemporaryDirectory(prefix='display-browser-') as data:
             page.goto(base + '/screen/living-room')
             page.wait_for_function('document.querySelectorAll("#viewportContainer iframe").length===1')
             assert page.locator('#viewportContainer iframe').count()==1
+            screen_frame = page.locator('#viewportContainer iframe')
+            assert screen_frame.evaluate('(frame) => new URL(frame.src).pathname').startswith('/screen/') is False
+            screen_frame.content_frame.locator('body').wait_for()
+            assert screen_frame.content_frame.locator('body').inner_text().strip()
             assert not errors, errors
             print('PASS: editor close/cancel, installed fonts, media, Mainsail source/auth, printer display and offline/reconnect rotation')
             browser.close()

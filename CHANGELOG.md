@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1
+
+- Fix blank named screens by loading rotation pages from the server root.
+- Verify that named screen frames load real page content.
+
 ## 1.2.0
 
 - Reusable plugin definitions and separate user connection settings.
