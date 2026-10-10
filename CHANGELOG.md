@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Admin passwords are hashed with salted scrypt (`node password.js`); existing SHA-256 hashes still work.
+- The server warns at startup when no admin password is configured.
+- Uploading a file with an existing name keeps both files unless the upload explicitly replaces it.
+- Older pages use the bundled fonts instead of Google Fonts, so they render offline.
+- NASA picture page caches the daily picture, accepts `?key=` for your own API key and handles errors.
+- ISS page no longer falls back to an insecure HTTP API.
+- Node.js 22 or newer is supported (previously 22 only).
+- Release archives no longer include tests, tools or documentation images.
+- Removed the superseded `weather-clock.html` page and the abandoned Wayland/X11 display trials.
+- Rewritten public README with new screenshots.
+
 ## 1.2.1
 
 - Fix blank named screens by loading rotation pages from the server root.

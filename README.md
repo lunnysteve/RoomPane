@@ -1,123 +1,117 @@
 <p align="center"><img src="app-icon.svg" width="88" alt="Home Display logo"></p>
 
-# Home Display
+<h1 align="center">Home Display</h1>
 
-**Your home dashboard, designed by you.**
+<p align="center"><strong>A wall dashboard for your home that you design in the browser.</strong></p>
 
-Turn a Raspberry Pi and a screen into a display for clocks, weather, photos, animated layouts and connected devices. Design pages in your browser, choose what each screen shows, and reuse the same dashboard on an Android TV.
+<p align="center">
+  <a href="INSTALL.md">Install</a> ·
+  <a href="https://github.com/lunnysteve/home-display/releases">Download</a> ·
+  <a href="PLUGINS.md">Plugins</a> ·
+  <a href="android-tv/README.md">Android TV</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
+</p>
 
-Home Display runs on your own hardware. A Pi can host the dashboard and drive its attached display, or you can host the server separately and open screen URLs on other devices.
+![Six Home Display pages: a custom designed page, time with weather and humidity, weather, clock, humidity and the night sky](docs/images/display-preview.png)
 
-[Installation](INSTALL.md) · [Downloads](https://github.com/lunnysteve/home-display/releases) · [Plugin guide](PLUGINS.md) · [Android TV](android-tv/README.md) · [Changelog](CHANGELOG.md)
+Home Display turns a Raspberry Pi and a small screen into a rotating dashboard for the time, the weather, the moon, your photos and calendar, and devices around the house such as a 3D printer or Home Assistant. You manage everything from a phone or laptop on the same network. No cloud account is needed, and everything runs on your own hardware.
 
-![Example dashboard with a large clock, weather and a welcome message](docs/images/display-preview.png)
+## Features
 
-## Make it yours
+- **Ready-made pages.** These include clock, weather, humidity, moon phase and sunrise, forecast, countdown, the ISS tracker and NASA's picture of the day. They're lightweight enough for a Raspberry Pi 2.
+- **Visual page designer.** Drag clock, weather, text, image, icon, video and plugin blocks onto an 800 × 480 canvas. Choose colours, bundled or uploaded fonts and simple animations.
+- **HTML editor.** Edit any page's HTML, CSS and JavaScript and preview a draft before you save it.
+- **Multiple screens.** One server can drive several displays. Each screen has its own playlist and its own URL.
+- **Home integrations.** Show Klipper/Moonraker printer status, Home Assistant entities, photo slideshows and Google Calendar or iCal agendas. Integrations that are offline can be hidden automatically.
+- **Community plugins.** Install a plugin as a JSON definition and an HTML renderer. Credentials stay on the server.
+- **Sleep schedule.** The screen blanks at night and wakes in the morning.
+- **Safe updates.** Install new releases from the Studio. The checksum is verified first, and if the new version fails to start, the previous one is restored.
+- **Android TV.** Use a TV as another screen, or as its screensaver.
 
-| Feature | What you can do |
-| --- | --- |
-| Page designer | Arrange clock, weather, text, image and icon blocks on an 800 × 480 canvas. |
-| Fonts and themes | Choose colours, enlarge text, use bundled fonts or install your own TTF, OTF, WOFF or WOFF2 fonts. |
-| Images and motion | Upload photos, GIFs, SVGs and silent looping videos; animate individual blocks. |
-| HTML editor | Edit a page’s HTML, CSS and JavaScript, with a draft preview before saving. |
-| Multiple screens | Give each display its own page selection and a URL you can copy. |
-| Connected devices | Show Klipper/Moonraker printer status and selected Home Assistant entity states. Hide disconnected integrations. |
-| Photos and calendar | Rotate local photos or Google Photos exports, and show upcoming Google Calendar/iCalendar events. |
-| Universal plugins | Install reusable community definitions and HTML renderers, configure connections, and use any integration as a full page or designer block. |
-| Updates | Check versioned GitHub releases and install application updates on supported Pi installations, with rollback if startup fails. |
-| Android TV | View a screen when the app opens, or select Home Display as a system screensaver where supported. |
+## Quick start on a Raspberry Pi
 
-## Design in your browser
+You need a **Raspberry Pi 2 or newer**, an HDMI or official DSI display, and a microSD card flashed with **Raspberry Pi OS Lite (Bookworm or newer)**. Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to set a username, Wi-Fi and SSH. On a Pi 2, use the 32-bit image.
 
-The Studio separates **Pages & designer**, **Screens**, **Plugins**, **Weather & schedule**, and **Updates**. Page colours and fonts stay beside the canvas; weather location and daily sleep times have their own settings area.
-
-![Studio with page list, visual designer and theme controls](docs/images/studio-designer.png)
-
-Add a page, place its blocks, choose fonts and colours, then select **Save page & settings** to send changes to the display. Screenshots use example pages and preview weather; your layout and live data will vary.
-
-## Get started on a Raspberry Pi
-
-You need a **Raspberry Pi 2 or newer**, an HDMI or DSI display, a microSD card and a suitable power supply. Flash **Raspberry Pi OS Lite, Bookworm or newer**, using Raspberry Pi Imager. Use 32-bit Lite on a Pi 2. Set a username, configure networking and enable SSH.
-
-On the Pi:
+Then, on the Pi:
 
 ```bash
-sudo apt update
-sudo apt install -y git
+sudo apt update && sudo apt install -y git
 git clone https://github.com/lunnysteve/home-display.git
 cd home-display
 sudo bash install.sh
 sudo reboot
 ```
 
-The repository is currently private while the project is prepared for sharing; cloning and downloading releases requires access until it is made public. These commands also work unchanged once it is public.
+The installer asks you to choose an admin password. After the reboot, the attached screen opens the dashboard. From another device, open **`http://YOUR-PI:3000/admin`** and sign in as `admin`.
 
-Choose an admin password during installation. After reboot, visit **`http://YOUR-PI:3000/admin`** from another device on the same network and sign in as **`admin`**. The attached display opens the dashboard automatically.
+If the Pi should only host the server, with no attached screen, use `sudo bash install.sh --server-only`. The [installation guide](INSTALL.md) covers hardware notes, the Pi 2 DSI screen workaround, backups and troubleshooting.
 
-For a Pi that only hosts the server, use `sudo bash install.sh --server-only`. The [installation guide](INSTALL.md) covers hardware, the Pi 2 DSI workaround, backups and troubleshooting. The installer targets Pi ARM hardware; the Node application can also run separately for development or other hosting. Network access is needed for installation and live weather.
+## Design your pages
 
-## One server, more screens
+The **Studio** at `/admin` has five sections: **Pages & designer**, **Screens**, **Plugins**, **Weather & schedule** and **Updates**.
 
-Create profiles under **Screens** and choose which pages and plugins each one includes. Open its URL on a Pi kiosk, browser or Android TV connected to the server.
+![The Studio page designer with the page list, live canvas and style settings](docs/images/studio-designer.png)
 
-![Screen profiles with display URLs and playlist controls](docs/images/studio-screens.png)
+To design a page, add it, place blocks on the canvas, and choose fonts and colours. Then select **Save page & settings** and the display updates.
 
-| Endpoint | Purpose |
+## Run more than one screen
+
+Under **Screens**, create a profile for each display and choose which pages it shows. Open the profile's URL on a Pi, in any browser, or in the Android TV app.
+
+![Screen profiles with their display URLs and page selection](docs/images/studio-screens.png)
+
+| URL | What it shows |
 | --- | --- |
-| `http://YOUR-PI:3000/` | Default display rotation. |
-| `http://YOUR-PI:3000/admin` | Studio and administration. |
-| `http://YOUR-PI:3000/screen/living-room` | A named screen profile, after you create it. |
-
-Profiles share the page library and weather settings. Each profile selects its own playlist; devices need network access to the server.
+| `http://YOUR-PI:3000/` | The default rotation of all active pages |
+| `http://YOUR-PI:3000/screen/kitchen` | A named screen profile |
+| `http://YOUR-PI:3000/admin` | The Studio |
 
 ## Connect your home
 
-The plugin system separates reusable integration definitions from your own connection settings. Start with **Klipper / Moonraker**, **Home Assistant**, **Photos**, or **Calendar**. Every example works as a full page or a movable block in **Pages & designer**. Choose a connection in the block’s properties to use more than one device of the same type.
+Under **Plugins**, add a connection. Each connection can appear as a full page in the rotation, as a block inside a designed page, or as both. **Test connection** makes a real request from the server, and **Only show when connected** hides the plugin while the device is offline.
 
-![Plugin setup with source address, connection test and connected-only visibility](docs/images/studio-plugins.png)
+![Adding a Klipper / Moonraker printer connection](docs/images/studio-plugins.png)
 
-| Example | Setup |
+| Integration | What you need |
 | --- | --- |
-| Klipper / Moonraker | Enter `http://PRINTER-IP:7125` and an API key if needed. |
-| Home Assistant | Enter the server URL, a long-lived access token and the entity IDs you want to display. |
-| Photos | Upload images or Google Photos exports, choose existing uploads, or add image URLs. Direct Google account sign-in is not part of this version. |
-| Calendar | Paste your Google Calendar iCal address, use another feed, upload an `.ics` file, or choose a Home Assistant calendar. |
+| Klipper / Moonraker | The printer address, e.g. `http://printer.local:7125`, and an API key if you set one |
+| Home Assistant | Your server URL, a long-lived access token and the entity IDs to show |
+| Photos | Uploaded images, a Google Photos export, or image URLs |
+| Calendar | A Google Calendar iCal address, another iCal feed, an uploaded `.ics` file or a Home Assistant calendar |
 
-Use **Test connection** for a real request from the server. **Only show when connected** hides an unavailable full page or block; other content on the designed page keeps showing. Disable **Include as a full page in rotation** for integrations you only want inside your designs.
-
-Other users can distribute plugins as a **JSON definition and HTML renderer**. Install them under **Plugins → Install a community plugin**, then enter your own connection settings. Read the [setup and developer guide](PLUGINS.md) and try the [installable power-meter example](plugin-examples/). Source credentials and private calendar feed addresses remain on the server.
+To write your own plugin, see the [plugin guide](PLUGINS.md) and the [power-meter example](plugin-examples/).
 
 ## Android TV
 
-Download **`home-display-tv-vVERSION.apk`** from [Releases](https://github.com/lunnysteve/home-display/releases), sideload it onto your TV, and open **Home Display**. Enter the server URL, load its profiles and choose a screen.
+1. Download `home-display-tv-vX.Y.Z.apk` from [Releases](https://github.com/lunnysteve/home-display/releases) and sideload it onto the TV.
+2. Open **Home Display**, enter your server URL and pick a screen.
+3. Optionally, choose Home Display as the TV's screensaver.
 
-- Leave automatic viewing enabled to show the screen when the app opens.
-- For a screensaver, choose Home Display in the TV’s system screensaver settings.
-- Use Back or Menu to return to the app menu.
+It needs Android 6 or newer. Whether the screensaver option appears depends on the TV's firmware. Android TV support is new, so reports from real devices are very welcome. See [Android TV setup](android-tv/README.md).
 
-Android 6 or newer and a working Android System WebView are required. Screensaver availability depends on TV firmware. The APK is built and signed; playback and screensaver behaviour still need verification on a physical TV. See [Android TV setup](android-tv/README.md).
+## Updates, backups and security
 
-## Updates and your data
+- **Updates.** **Updates** in the Studio checks GitHub for the latest release and installs it on Pi installations. Your settings, uploads, fonts, screens and plugins are kept in `/var/lib/home-display`.
+- **Backups.** Before you reflash a card, copy `/var/lib/home-display` and `/etc/home-display`.
+- **Security.** The Studio is protected by the admin password and is meant for a trusted home network. Put it behind an HTTPS reverse proxy before you expose it anywhere else. Uploaded HTML pages and plugins run in the display's browser, so only install ones you trust.
 
-**Updates** shows the installed version, checks the latest stable release, and offers installation when a newer compatible release is available. **Public releases need no GitHub token.** Private releases use the optional repository access setting with a token restricted to **Contents: read-only**.
+## Development
 
-Standalone Pi updates preserve settings, uploads, installed fonts, screens and plugin configuration in `/var/lib/home-display`. The updater verifies the release checksum and restores the previous application if its health check fails. Back up runtime data and `/etc/home-display` before replacing a card or making major changes. See [release details](RELEASING.md).
-
-Admin access is intended for a trusted local network; use HTTPS when accessing it through a proxy. Installable web-app features on phones require trusted HTTPS. Uploaded HTML and plugins run code supplied by the owner.
-
-## Development and contributions
-
-Use Node.js 22:
+Home Display is a small Node.js (22 or newer) server with plain HTML, CSS and JavaScript pages. There is no build step.
 
 ```bash
 npm ci
 npm test
-npm start
+npm start          # http://localhost:3000 and http://localhost:3000/admin
 ```
 
-Open `http://localhost:3000/admin`. The Pi installer configures authentication; a development server only enables it when an admin password hash is configured.
+To protect the Studio on a development machine, create a password hash and set it before you start the server:
 
-Browser checks use Python, Playwright and Pillow:
+```bash
+export HOME_DISPLAY_ADMIN_PASSWORD_HASH="$(node password.js)"   # type a password, then Ctrl+D
+```
+
+The browser tests use Python, Playwright and Pillow:
 
 ```bash
 python -m pip install playwright pillow
@@ -125,8 +119,21 @@ python -m playwright install chromium
 python tests/designer-browser.py
 python tests/plugin-browser.py
 python tests/updater-rollback.py
+python tools/capture-screenshots.py   # regenerates the images in this README
 ```
 
-Bug reports, hardware test results, documentation improvements and plugin ideas are welcome. Include your device model, OS version, application version and steps to reproduce an issue. Keep credentials, personal settings and uploaded media out of contributions.
+| Path | Contents |
+| --- | --- |
+| `server.js` | Express server, API and admin authentication |
+| `*.html`, `lite.js`, `lite.css` | Display pages and the shared lightweight renderer |
+| `designer.*`, `studio-*.js`, `plugin-*.js` | The Studio and the plugin system |
+| `app-files.json` | Core files that the Studio can't overwrite |
+| `pi/` | Installer helpers, systemd units and kiosk session |
+| `android-tv/` | Android TV viewer and screensaver |
+| `tests/`, `tools/` | Automated checks and release tooling |
 
-To regenerate the example screenshots and check Studio navigation, run `python tools/capture-screenshots.py`. This uses temporary example data and leaves your saved dashboard settings intact.
+## Contributing
+
+Bug reports, hardware test results, documentation fixes and plugin ideas are all welcome. When you report a problem, include your device model, OS version, Home Display version (shown in the Studio header) and the steps to reproduce it. Please keep credentials, personal settings and uploaded media out of issues and pull requests.
+
+Release steps are in [RELEASING.md](RELEASING.md).
