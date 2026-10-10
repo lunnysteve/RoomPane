@@ -71,7 +71,9 @@ function dragCard(e, card) {
 }
 async function openAddPage() {
   $('add-page-form').hidden = false; $('add-page-url').value = '';
+  $('add-page-file').disabled = $('add-page-confirm').disabled = true;
   try { const files = (await api('/api/files')).files.filter(n => /\.html$/i.test(n) && !/^plugin-/.test(n)); $('add-page-file').replaceChildren(new Option('Choose a page…', ''), ...files.map(n => new Option(n.replace(/\.html$/i, '').replace(/[-_]/g, ' '), n))); } catch (e) { message(e.message); }
+  finally { $('add-page-file').disabled = $('add-page-confirm').disabled = false; }
 }
 $('add-page').onclick = openAddPage;
 $('add-page-cancel').onclick = () => { $('add-page-form').hidden = true; };
