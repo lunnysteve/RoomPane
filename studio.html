@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#142133">
+<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/app-icon.svg">
+<title>Home Display · Studio</title>
+<link rel="stylesheet" href="/studio.css"><link rel="stylesheet" href="/design-assets.css">
+</head>
+<body>
+<header><h1>Home Display <small>Studio</small></h1><a href="/" target="_blank" rel="noopener">Open live display ↗</a></header>
+<nav class="studio-nav" aria-label="Studio sections">
+  <button data-section="pages">Pages</button><button data-section="screens">Screens</button><button data-section="plugins">Plugins</button><button data-section="settings">Settings</button><button data-section="updates" id="nav-updates">Updates</button>
+</nav>
+<main>
+
+<!-- Pages: list view -->
+<section id="page-list-view" class="panel" data-for="pages">
+  <div class="list-head"><h2>Pages in rotation</h2><button id="add-page">＋ Add a page</button><button id="new" class="primary">＋ Design a page</button></div>
+  <p class="hint">Drag ⠿ to change the order. Switch a page off to keep it without showing it. Tap a page to edit it.</p>
+  <div id="page-list"></div>
+  <div id="add-page-form" class="card" hidden>
+    <h3>Add a page</h3>
+    <label for="add-page-file">Ready-made page or your uploaded HTML</label><select id="add-page-file"></select>
+    <label for="add-page-url">Or a web address</label><input id="add-page-url" type="url" placeholder="https://example.com/dashboard">
+    <div class="row" style="margin-top:12px"><button id="add-page-confirm" class="primary">Add page</button><button id="add-page-cancel">Cancel</button></div>
+  </div>
+</section>
+
+<!-- Pages: editor view -->
+<section id="page-editor" data-for="pages" hidden>
+  <div class="editor-head"><button id="back-to-pages">← All pages</button><h2 id="editor-title">Page</h2></div>
+  <div class="editor">
+    <div class="panel">
+      <div id="designer">
+        <div class="tools"><button data-add="clock">＋ Clock</button><button data-add="weather">＋ Weather</button><button data-add="text">＋ Text</button><button data-add="image">＋ Image</button><button data-add="icon" data-motion="none">＋ Icon</button><button data-add="icon" data-motion="pulse">＋ Animated icon</button></div>
+        <div class="stage-wrap"><div class="stage" id="stage"></div></div>
+        <label for="block-layer">Selected block</label><select id="block-layer"></select>
+        <div id="prop" hidden>
+          <div class="row"><div><label for="x">X</label><input id="x" type="number"></div><div><label for="y">Y</label><input id="y" type="number"></div><div><label for="w">Width</label><input id="w" type="number"></div><div><label for="h">Height</label><input id="h" type="number"></div></div>
+          <div class="row"><div><label for="size">Text size</label><input id="size" type="number" min="12" max="400"></div><div><label for="colour">Colour</label><input id="colour" type="color"></div></div>
+          <label for="content" id="text-label">Text</label><textarea id="content" rows="3" maxlength="2000"></textarea>
+          <div class="row"><div><label for="block-font">Font</label><select id="block-font"><option value="sans">Modern sans</option><option value="serif">Classic serif</option><option value="mono">Monospace</option><option value="heavy">Heavy sans</option><option value="serifbold">Bold serif</option><option value="monoitalic">Slanted monospace</option><option value="system">System font</option></select></div><div><label for="block-weight">Weight</label><select id="block-weight"><option value="400">Regular</option><option value="600">Semibold</option><option value="700">Bold</option></select></div><div><label for="block-align">Alignment</label><select id="block-align"><option value="left">Left</option><option value="center">Centre</option><option value="right">Right</option></select></div></div>
+          <div class="row"><div><label for="block-animation">Animation</label><select id="block-animation"><option value="none">Still</option><option value="pulse">Pulse</option><option value="float">Float</option><option value="spin">Spin</option><option value="bounce">Bounce</option><option value="fade">Fade</option></select></div><div><label for="block-speed">Seconds per loop</label><input id="block-speed" type="number" min="1" max="20" value="4"></div></div>
+          <div class="row" style="align-items:center"><label class="check"><input id="block-fill" type="checkbox"> Fill background</label><input id="block-background" type="color" style="max-width:80px"></div>
+          <div id="icon-controls" hidden><label for="icon-choice">Icon</label><select id="icon-choice"></select><div id="icon-palette" style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:10px"></div></div>
+          <button id="delete-block" class="danger" style="margin-top:14px">Delete block</button>
+        </div>
+      </div>
+      <div id="legacy" hidden>
+        <iframe id="preview" title="Page preview" sandbox="allow-scripts allow-same-origin"></iframe>
+        <p class="hint">This is a ready-made page. Customise it to change its layout in the designer, or edit its HTML directly.</p>
+        <div class="row"><button id="make-editable" class="primary">Customise visually</button><button id="open-html">Edit HTML</button></div>
+      </div>
+      <div id="html-editor" hidden>
+        <h3>HTML editor</h3>
+        <p class="hint">Save HTML publishes the file straight away.</p>
+        <label for="html-file">File</label><select id="html-file"></select>
+        <label for="html-source">Source</label><textarea id="html-source" rows="20" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+        <div class="row" style="margin-top:12px"><button id="html-preview">Preview draft</button><button id="html-save" class="primary">Save HTML</button><button id="close-html">Close</button></div>
+        <p id="html-status" class="hint" role="status">Choose a file to edit.</p>
+        <iframe id="html-frame" title="HTML draft preview" sandbox="allow-scripts" hidden></iframe>
+      </div>
+    </div>
+    <div class="editor-side">
+      <div class="panel">
+        <h2>Page</h2>
+        <label for="name">Name</label><input id="name" maxlength="100">
+        <label for="duration">Seconds on screen</label><input id="duration" type="number" min="5" max="3600">
+        <label class="check" style="margin-top:14px"><input id="active" type="checkbox"> Show in rotation</label>
+        <label class="check"><input id="schedule-enabled" type="checkbox"> Only at certain times</label>
+        <div id="schedule-fields" hidden>
+          <div class="row"><div><label for="schedule-start">From</label><select id="schedule-start"></select></div><div><label for="schedule-end">Until</label><select id="schedule-end"></select></div></div>
+          <label>On these days</label><div class="days" id="schedule-days"></div>
+        </div>
+        <button id="remove" class="danger" style="margin-top:16px">Remove page</button>
+      </div>
+      <div class="panel" id="style-panel">
+        <h2>Style</h2>
+        <label for="theme">Theme</label><select id="theme"><option value="midnight">Midnight</option><option value="paper">Paper</option><option value="forest">Forest</option><option value="sunset">Sunset</option></select>
+        <div class="row"><div><label for="bg">Background</label><input id="bg" type="color"></div><div><label for="fg">Text</label><input id="fg" type="color"></div><div><label for="accent">Accent</label><input id="accent" type="color"></div></div>
+        <details style="margin-top:16px"><summary>Images &amp; video</summary>
+          <label for="upload">Upload</label><input id="upload" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,video/mp4,video/webm">
+          <p class="hint" id="upload-info">PNG, JPG, WebP, GIF, SVG, MP4 or WebM, up to 20 MB. Short, low-resolution videos work best.</p>
+          <label for="media-library">Already uploaded</label><select id="media-library"><option value="">Choose a file…</option></select>
+          <button id="use-media" style="margin-top:8px">Add to this page</button>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Screens -->
+<section id="devices-panel" class="panel" data-for="screens">
+  <h2>Open on another device</h2>
+  <div class="share">
+    <div>
+      <p class="hint">Scan the code or type an address on a phone, browser or the Android TV app. Devices must be on the same network.</p>
+      <div id="endpoint-list"></div>
+    </div>
+    <img id="qr" alt="QR code for the selected address" hidden>
+  </div>
+  <h3>Screen profiles</h3>
+  <p class="hint">Give a display its own page selection and address.</p>
+  <div id="screen-list" class="cards"></div>
+  <button id="new-screen" style="margin-top:12px">＋ Add a screen</button>
+  <div id="screen-form" hidden>
+    <label for="screen-name">Name</label><input id="screen-name" placeholder="Living room TV">
+    <label class="check" style="margin-top:12px"><input id="screen-all" type="checkbox" checked> Show all pages and plugins</label>
+    <div id="screen-pages"></div>
+    <div class="row" style="margin-top:12px"><button id="save-screen" class="primary">Save screen</button><button id="cancel-screen">Cancel</button></div>
+  </div>
+</section>
+<section id="display-panel" class="panel narrow" data-for="screens">
+  <h2>This display</h2>
+  <div class="tools"><button id="sleep-toggle">Turn screen off</button><button id="restart-browser">Restart browser</button><button id="reboot-pi" class="danger">Reboot Pi</button></div>
+  <p id="display-status" class="hint" role="status"></p>
+</section>
+
+<!-- Plugins -->
+<section id="plugins-panel" class="panel" data-for="plugins">
+  <p class="hint">Plugins</p>
+  <h2 style="margin-top:12px">Your connections</h2>
+  <div id="plugin-list" class="cards"></div>
+  <button id="new-plugin" style="margin-top:12px">＋ Add a plugin</button>
+  <div id="plugin-form" hidden>
+    <div class="row"><div><label for="plugin-name">Name</label><input id="plugin-name" maxlength="100" placeholder="Workshop printer"></div><div><label for="plugin-type">Plugin</label><select id="plugin-type"><option value="mainsail">Mainsail / Klipper printer</option><option value="custom">Custom single-page plugin</option></select></div></div>
+    <label for="plugin-source">Source address</label><input id="plugin-source" placeholder="http://printer.local:7125"><p class="hint">Enter the printer IP or full Moonraker URL.</p>
+    <label for="plugin-key">API key (optional)</label><input id="plugin-key" type="password" autocomplete="off" placeholder="Leave blank to keep an existing key">
+    <label class="check"><input id="plugin-clear-key" type="checkbox"> Clear saved API key</label>
+    <div id="custom-plugin-fields" hidden>
+      <label for="plugin-html">Upload your plugin HTML</label><input id="plugin-html" type="file" accept=".html,text/html">
+      <p class="hint" id="plugin-file">No file selected.</p><p class="hint"><a href="/plugin-example.html" download>Download the starter page</a></p>
+      <label for="plugin-health">Source health / JSON data path</label><input id="plugin-health" value="/" placeholder="/api/status">
+      <p class="hint">A successful GET means connected. JSON responses reach the page through /api/plugin-data/:id; the API key stays on the Pi.</p>
+    </div>
+    <div class="row" style="align-items:flex-start"><div><label for="plugin-time">Seconds on screen</label><input id="plugin-time" type="number" min="5" max="3600" value="30"></div><div><label class="check" style="margin-top:34px"><input id="plugin-enabled" type="checkbox" checked> Enable plugin</label><label class="check"><input id="plugin-connected" type="checkbox" checked> Only show when connected</label></div></div>
+    <div class="row" style="margin-top:16px"><button id="plugin-test">Test connection</button><button id="plugin-save" class="primary">Save plugin</button><button id="plugin-cancel">Close</button></div>
+    <p class="hint" id="plugin-result" role="status">Enter a source address, then test the real connection.</p>
+  </div>
+</section>
+
+<!-- Settings -->
+<section id="settings-panel" class="panel narrow" data-for="settings">
+  <h2>Weather location</h2>
+  <label for="city">Town or city</label><div class="row"><input id="city" placeholder="e.g. Reading"><button id="search" style="flex:none">Find</button></div>
+  <div id="results"></div>
+  <div class="row"><div><label for="latitude">Latitude</label><input id="latitude" type="number" step="any" min="-90" max="90"></div><div><label for="longitude">Longitude</label><input id="longitude" type="number" step="any" min="-180" max="180"></div></div>
+  <div class="row"><div><label for="timezone">Timezone</label><input id="timezone" placeholder="Europe/London"></div><div><label for="units">Units</label><select id="units"><option value="celsius">Celsius</option><option value="fahrenheit">Fahrenheit</option></select></div></div>
+  <h2 style="margin-top:28px">Screen schedule</h2>
+  <div class="row"><div><label for="sleepTime">Screen off at</label><input id="sleepTime" type="time"></div><div><label for="wakeTime">Screen on at</label><input id="wakeTime" type="time"></div></div>
+  <label for="transition">Page transition</label><select id="transition"><option value="fade">Fade</option><option value="slide">Slide</option><option value="instant">Instant</option></select>
+</section>
+<section class="panel narrow" data-for="settings">
+  <h2>Fonts</h2>
+  <label for="font-upload">Install a font</label><input id="font-upload" type="file" accept=".ttf,.otf,.woff,.woff2">
+  <p id="font-status" class="hint">TTF, OTF, WOFF or WOFF2, up to 4 MB. Installed fonts appear in the designer's font menu.</p>
+</section>
+<section class="panel narrow" data-for="settings">
+  <h2>Uploaded files</h2>
+  <p class="hint">Images, videos and HTML you have uploaded, plus any built-in page you have edited. Deleting a file that a page uses will leave a gap on that page.</p>
+  <div id="file-list"></div>
+</section>
+<section class="panel narrow" data-for="settings">
+  <h2>Use the Studio as an app</h2>
+  <button id="install">Install app</button>
+  <p id="install-help" class="hint"></p>
+</section>
+
+<!-- Updates -->
+<section id="updates-panel" class="panel narrow" data-for="updates">
+  <h2>Software updates</h2>
+  <p id="update-version">Loading version…</p>
+  <p id="update-message" class="hint"></p>
+  <div class="row" style="flex-wrap:wrap"><button id="check-updates" style="flex:0 1 auto">Check for updates</button><button id="install-update" class="primary" style="flex:0 1 auto" disabled>Install update</button><a id="release-link" hidden target="_blank" rel="noopener" style="flex:0 1 auto;align-self:center">Release notes</a></div>
+  <p id="update-install-state" class="hint"></p>
+  <details id="token-options" hidden style="margin-top:18px"><summary>Private repository access</summary>
+    <label for="github-token">GitHub access token</label><input id="github-token" type="password" autocomplete="off" placeholder="Fine-grained token with Contents: read-only">
+    <button id="save-github-token" style="margin-top:8px">Save token</button>
+    <p id="github-token-state" class="hint">Only needed while the repository is private. Leave empty and save to remove a stored token.</p>
+  </details>
+</section>
+</main>
+
+<div id="save-bar" class="idle" hidden><span id="status" role="status">Loading your display…</span><button id="discard">Discard</button><button id="save" class="primary">Save changes</button></div>
+<script src="/design-assets.js"></script><script src="/studio.js"></script><script src="/plugin-studio.js"></script>
+</body>
+</html>

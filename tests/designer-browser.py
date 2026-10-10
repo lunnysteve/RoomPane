@@ -54,6 +54,7 @@ with tempfile.TemporaryDirectory(prefix='display-browser-') as data:
             page.on('pageerror', lambda err: errors.append(str(err)))
             page.goto(base + '/admin')
             page.wait_for_function("document.getElementById('status').textContent.startsWith('Ready')")
+            page.locator('.page-open').first.click()
             page.locator('#open-html').click()
             page.wait_for_function("document.getElementById('html-source').value.includes('<html')")
             assert page.locator('#html-file').input_value() == 'display.html'
@@ -66,9 +67,10 @@ with tempfile.TemporaryDirectory(prefix='display-browser-') as data:
             assert 'HTML edited in Studio' in urllib.request.urlopen(base + '/display.html').read().decode()
             page.reload()
             page.wait_for_function("document.getElementById('status').textContent.startsWith('Ready')")
+            page.locator('.page-open').first.click()
             page.locator('#open-html').click()
             page.wait_for_function("document.getElementById('html-source').value.includes('HTML edited in Studio')")
-            page.locator('#open-html').click()
+            page.locator('#close-html').click()
             # The initial legacy page must have an obvious route into editing.
             page.locator('#make-editable').click()
             assert page.locator('.block').count() == 2
@@ -81,6 +83,7 @@ with tempfile.TemporaryDirectory(prefix='display-browser-') as data:
             initial = json.load(urllib.request.urlopen(base + '/api/config'))['pages'][0]
             assert initial['originalUrl'] == 'display.html'
             assert initial['design']['blocks'][0]['size'] == 80
+            page.locator('#back-to-pages').click()
             page.locator('#new').click()
             page.locator('#name').fill('Kitchen screen')
             page.locator('[data-add=text]').click()
@@ -141,7 +144,7 @@ with tempfile.TemporaryDirectory(prefix='display-browser-') as data:
             assert designed['design']['blocks'][3]['content'].endswith('.gif')
             assert designed['design']['blocks'][4]['type'] == 'video'
             page.reload()
-            page.get_by_role('button', name='● Kitchen screen', exact=True).click()
+            page.locator('.page-card', has_text='Kitchen screen').locator('.page-open').click()
             assert page.locator('#name').input_value() == 'Kitchen screen'
             page.screenshot(path=str(root / 'tests' / 'designer-preview.png'), full_page=True)
             page.goto(base + '/' + designed['url'])
@@ -158,21 +161,20 @@ with tempfile.TemporaryDirectory(prefix='display-browser-') as data:
             assert page.locator('.motion-spin').evaluate('(el) => getComputedStyle(el).animationName') == 'none'
             page.goto(base + '/admin')
             page.wait_for_function("document.getElementById('status').textContent.startsWith('Ready')")
-            page.get_by_role('button', name='● Kitchen screen', exact=True).click()
-            page.locator('#close-designer').click()
-            assert page.locator('#designer').is_hidden()
-            page.locator('#close-designer').click()
-            assert page.locator('#designer').is_visible()
+            page.locator('.page-card', has_text='Kitchen screen').locator('.page-open').click()
             page.locator('#name').fill('Cancelled name')
             page.on('dialog',lambda dialog:dialog.accept())
-            page.locator('#cancel-designer').click()
+            page.locator('#discard').click()
             assert page.locator('#name').input_value() == 'Kitchen screen'
-            page.locator('#close-designer').click()
-            page.locator('#block-layer').select_option(designed['design']['blocks'][0]['id'])
+            assert page.locator('#save-bar #save').is_hidden()
+            page.get_by_role('button', name='Settings', exact=True).click()
             page.locator('#font-upload').set_input_files(str(root / 'studio-serif.ttf'))
             page.wait_for_function("document.getElementById('font-status').textContent.startsWith('Installed')")
-            uploaded_font = page.locator('#block-font').input_value()
-            assert uploaded_font.startswith('uploaded:')
+            page.get_by_role('button', name='Pages', exact=True).click()
+            assert page.locator('#designer').is_visible()
+            page.locator('#block-layer').select_option(designed['design']['blocks'][0]['id'])
+            uploaded_font = page.locator('#block-font option[value^="uploaded:"]').first.get_attribute('value')
+            page.locator('#block-font').select_option(uploaded_font)
             page.locator('#save').click()
             page.wait_for_function("document.getElementById('status').textContent.startsWith('Saved')")
             page.goto(base + '/' + designed['url'])
@@ -248,7 +250,7 @@ with tempfile.TemporaryDirectory(prefix='display-browser-') as data:
             screen_frame.content_frame.locator('body').wait_for()
             assert screen_frame.content_frame.locator('body').inner_text().strip()
             assert not errors, errors
-            print('PASS: editor close/cancel, installed fonts, media, Mainsail source/auth, printer display and offline/reconnect rotation')
+            print('PASS: page list, discard, installed fonts, media, Mainsail source/auth, printer display and offline/reconnect rotation')
             browser.close()
     finally:
         server.terminate()
