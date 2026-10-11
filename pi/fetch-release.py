@@ -23,12 +23,15 @@ class Redirect(HTTPRedirectHandler):
         redirected=super().redirect_request(request,fp,code,msg,headers,newurl)
         return redirected
 opener=build_opener(Redirect())
+INSTALL_LOG=[]
 def status(state,message,version=None):
     target=DATA/'update-status.json'
+    INSTALL_LOG.append(time.strftime('%H:%M:%S')+'  '+message)
+    del INSTALL_LOG[:-50]
     descriptor,temporary=tempfile.mkstemp(prefix='.update-',dir=DATA)
     with os.fdopen(descriptor,'w') as handle:
         os.fchmod(handle.fileno(),0o644)
-        json.dump({'state':state,'message':message,'version':version,'updatedAt':time.time()},handle)
+        json.dump({'state':state,'message':message,'version':version,'updatedAt':time.time(),'log':INSTALL_LOG},handle)
     os.replace(temporary,target)
 def download(url,target=None,limit=150*1024*1024,asset=False):
     if not url.startswith('https://api.github.com/repos/'+REPO+'/'): raise ValueError('Untrusted release URL')
@@ -98,6 +101,7 @@ def main():
         sums=download(assets['SHA256SUMS'],limit=65536,asset=True).decode()
         expected=next((line.split()[0] for line in sums.splitlines() if len(line.split())==2 and line.split()[1].lstrip('*')==name),None)
         if not expected or hashlib.sha256(archive.read_bytes()).hexdigest()!=expected:raise ValueError('Release checksum verification failed')
+        status('verifying','Checksum verified; checking archive contents',version)
         with tarfile.open(archive) as tar:
             total=0
             for member in tar.getmembers():
@@ -109,7 +113,7 @@ def main():
                 tar.extract(member,stage,set_attrs=False)
                 (stage/member.name).chmod(member.mode)
         if json.loads((stage/'package.json').read_text())['version']!=version:raise ValueError('Package version differs from release tag')
-        status('installing','Preparing '+tag,version)
+        status('installing','Installing dependencies for '+tag,version)
         subprocess.run([str(NODE/'npm'),'ci','--omit=dev','--ignore-scripts'],cwd=stage,check=True,env={**os.environ,'PATH':str(NODE)+':/usr/bin:/bin'},stdout=subprocess.DEVNULL)
         # The daemon runs as home-display, rather than the root installer.
         for directory,subdirs,files in os.walk(stage):
@@ -122,14 +126,17 @@ def main():
         backup=UPDATES/('app-v'+current+'-'+str(time.time_ns()))
         system_backup=UPDATES/('system-v'+current+'-'+str(time.time_ns()))
         prepare_system_files(stage,system_backup)
+        status('installing','Dependencies ready; replacing application',version)
         run('systemctl','stop','home-display')
         try:
             APP.rename(backup);stage.rename(APP)
             for name,(target,mode) in SYSTEM_FILES.items():replace_system_file(APP/'pi'/name,target,mode)
             run('systemctl','daemon-reload')
             run('systemctl','start','home-display')
+            status('verifying','Checking the restarted application',version)
             if not healthy():raise ValueError('Updated service failed its health check')
         except Exception:
+            status('rolling-back','Installation failed; restoring previous application',current)
             run('systemctl','stop','home-display')
             if backup.exists():
                 if APP.exists():APP.rename(work/'failed-app')

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.3
+
+- Show a timestamped install log below Studio updates, with progress through verification, dependency installation, restart, and rollback.
+- Keep polling through a new install even when a previous install already has a completed status.
+
 ## 1.3.2
 
 - Android TV checks public releases on launch and offers a newer signed APK download; app settings include a manual check.

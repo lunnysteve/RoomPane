@@ -5,6 +5,17 @@ from unittest.mock import patch
 spec=importlib.util.spec_from_file_location('updater',Path(__file__).resolve().parents[1]/'pi/fetch-release.py')
 updater=importlib.util.module_from_spec(spec);spec.loader.exec_module(updater)
 class ReleaseInstall(unittest.TestCase):
+    def test_install_log_is_recorded_and_bounded(self):
+        with tempfile.TemporaryDirectory() as temporary, patch.object(updater,'DATA',Path(temporary)):
+            updater.INSTALL_LOG.clear()
+            for number in range(55):updater.status('installing','Step '+str(number),'1.2.0')
+            saved=json.loads((Path(temporary)/'update-status.json').read_text())
+            self.assertEqual(saved['state'],'installing')
+            self.assertEqual(len(saved['log']),50)
+            self.assertTrue(saved['log'][0].endswith('Step 5'))
+            self.assertTrue(saved['log'][-1].endswith('Step 54'))
+            updater.INSTALL_LOG.clear()
+
     def exercise(self,healthy,unsafe=False,fail_system=False):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);app=root/'app';app.mkdir();data=root/'data';data.mkdir();updates=root/'updates'

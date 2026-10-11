@@ -387,6 +387,7 @@ $('plugin-save').onclick = async () => { try { const result = await post('/api/p
 setInterval(refreshPluginConnections, 10000);
 
 // ---------- Updates ----------
+let latestInstallStatusAt = 0;
 async function checkUpdates(force = false) {
   $('check-updates').disabled = true;
   try {
@@ -396,14 +397,29 @@ async function checkUpdates(force = false) {
     $('nav-updates').classList.toggle('badge', !!result.available); $('nav-updates').title = result.available ? 'Update available' : '';
     $('release-link').hidden = !result.releaseUrl; if (result.releaseUrl) $('release-link').href = result.releaseUrl;
     $('update-install-state').textContent = result.state ? result.state.state + ': ' + result.state.message : '';
+    latestInstallStatusAt = Number(result.state?.updatedAt) || 0;
+    $('update-install-log').textContent = Array.isArray(result.state?.log) && result.state.log.length
+      ? result.state.log.join('\n')
+      : result.state ? result.state.message : 'No installation has run yet.';
+    return result;
   } catch (error) { $('update-message').textContent = error.message; } finally { $('check-updates').disabled = false; }
 }
 $('check-updates').onclick = () => checkUpdates(true);
 $('install-update').onclick = async () => {
   if (!confirm('Install the latest release? The server restarts; settings and uploads are kept.')) return;
   $('install-update').disabled = true;
-  try { await post('/api/updates/install', {}); $('update-install-state').textContent = 'Update started. Waiting for the server to restart…'; let attempts = 0; const timer = setInterval(async () => { attempts++; try { await checkUpdates(); if (attempts > 60 || /^(complete|failed):/.test($('update-install-state').textContent)) clearInterval(timer); } catch {} }, 5000); }
-  catch (error) { $('update-install-state').textContent = error.message; }
+  const previousStatusAt = latestInstallStatusAt;
+  try {
+    await post('/api/updates/install', {});
+    $('update-install-state').textContent = 'Update started. Waiting for the server to restart…';
+    $('update-install-log').textContent = 'Starting update…';
+    let attempts = 0;
+    const timer = setInterval(async () => {
+      attempts++;
+      const result = await checkUpdates();
+      if (attempts > 60 || (result?.state?.updatedAt > previousStatusAt && /^(complete|failed)$/.test(result.state.state))) clearInterval(timer);
+    }, 5000);
+  } catch (error) { $('update-install-state').textContent = error.message; $('update-install-log').textContent = error.message; }
 };
 
 // ---------- Start ----------
