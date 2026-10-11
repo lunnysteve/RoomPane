@@ -52,4 +52,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v$(node -p 'require("./package.json").version')"
-          gh release create "$TAG" dist/* --verify-tag --generate-notes --title "Home Display $TAG"
+          gh release create "$TAG" dist/* --verify-tag --generate-notes --title "Roompane $TAG"

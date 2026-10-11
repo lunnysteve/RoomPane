@@ -190,7 +190,7 @@
     </div>
 
     <div id="connectionAlert" class="no-pages-alert" role="status">
-      <h1>Connecting to Home Display</h1>
+      <h1>Connecting to Roompane</h1>
       <p id="connectionMessage">Waiting for your pages…</p>
     </div>
     <!-- Screen Off Sleep Overlay -->
@@ -243,7 +243,7 @@
     async function loadServerConfig() {
       try {
         const response = await fetch('/api/config'+screenQuery);
-        if (!response.ok) throw new Error(response.status === 404 ? 'This screen profile no longer exists. Check its address in Studio.' : 'Home Display is unavailable. Retrying automatically…');
+        if (!response.ok) throw new Error(response.status === 404 ? 'This screen profile no longer exists. Check its address in Studio.' : 'Roompane is unavailable. Retrying automatically…');
         const data = await response.json();
         
         const oldPages = JSON.stringify(allPages);
@@ -262,7 +262,7 @@
         checkSleepCycle();
         refreshConnectionMessage();
       } catch (err) {
-        configFailure = err.message.includes('screen profile') ? err.message : 'Cannot reach Home Display. Check the network connection. Retrying automatically…';
+        configFailure = err.message.includes('screen profile') ? err.message : 'Cannot reach Roompane. Check the network connection. Retrying automatically…';
         refreshConnectionMessage();
         console.error('Failed to load server config:', err);
       }

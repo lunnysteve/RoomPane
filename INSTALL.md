@@ -1,4 +1,4 @@
-# Install Home Display on a Raspberry Pi
+# Install Roompane on a Raspberry Pi
 
 This installer sets up the dashboard server, web admin, and a minimal Chromium kiosk on Raspberry Pi OS Lite. The screen uses the local server; Proxmox is not required.
 
@@ -102,7 +102,7 @@ the installer does not apply it automatically to other models.
 
 ## Using the Studio
 
-Open `/admin` for Home Display Studio. It has five sections:
+Open `/admin` for Roompane Studio. It has five sections:
 
 - **Pages** lists the rotation with live thumbnails. Drag to reorder, switch pages on or off, and tap a page to edit its name, duration and schedule (for example 08:00–17:59 on weekdays). **Add a page** brings back any ready-made page or adds a web address; **Design a page** starts a blank layout.
 - **Screens** shows the display's network address with a QR code, screen profiles for other displays, and controls to turn the screen off, restart the browser or reboot the Pi.
@@ -165,7 +165,7 @@ sudo systemctl stop home-display && (
 )
 ```
 
-Copy the encrypted file off the SD card. This is a data backup, not an operating-system image. To recover onto another Pi, install Home Display first, decrypt your own backup into a private temporary directory, inspect the archive, stop `home-display`, and restore its `var/lib/home-display` and `etc/home-display` directories to `/`. Set `/var/lib/home-display` ownership to `home-display:home-display`, retain restrictive permissions on `/etc/home-display/environment`, then restart the service. Reapply any hardware-specific DSI settings separately. A full restore replaces the admin password with the one from the backup.
+Copy the encrypted file off the SD card. This is a data backup, not an operating-system image. To recover onto another Pi, install Roompane first, decrypt your own backup into a private temporary directory, inspect the archive, stop `home-display`, and restore its `var/lib/home-display` and `etc/home-display` directories to `/`. Set `/var/lib/home-display` ownership to `home-display:home-display`, retain restrictive permissions on `/etc/home-display/environment`, then restart the service. Reapply any hardware-specific DSI settings separately. A full restore replaces the admin password with the one from the backup.
 
 ### Screen sleep behavior
 

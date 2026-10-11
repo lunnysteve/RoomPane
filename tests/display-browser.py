@@ -50,7 +50,7 @@ with tempfile.TemporaryDirectory(prefix='display-playback-') as data:
             fail_config = lambda route: route.fulfill(status=503, content_type='application/json', body='{}')
             page.route('**/api/config?screen=living-room', fail_config)
             page.goto(base + '/screen/living-room')
-            page.get_by_text('Cannot reach Home Display.', exact=False).wait_for()
+            page.get_by_text('Cannot reach Roompane.', exact=False).wait_for()
             page.unroute('**/api/config?screen=living-room', fail_config)
             page.evaluate('loadServerConfig()')
             page.frame_locator('iframe.active').get_by_text('morning', exact=True).wait_for()

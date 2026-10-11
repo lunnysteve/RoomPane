@@ -1,8 +1,8 @@
-# Home Display for Android TV
+# Roompane for Android TV
 
 The settings screen displays a QR code for the selected Pi's `/admin` Studio page.
 Scan it with a phone on the same network and sign in to edit the display. App
-updates download inside Home Display and then open Android's package installer;
+updates download inside Roompane and then open Android's package installer;
 the TV may ask once to allow installs from this app.
 
 The app checks public GitHub releases when opened. If a newer signed APK is
@@ -10,15 +10,15 @@ available, a prompt downloads it in the app and opens Android's installer. You c
 updates** in the app settings. Complete installation through the TV's installer;
 upgrades must use the same signing key as the installed app.
 
-The APK displays a screen endpoint from the Home Display server. It includes a
+The APK displays a screen endpoint from the Roompane server. It includes a
 TV launcher entry and a DreamService screensaver. Android 6 or newer and a working
 Android System WebView are required.
 
-1. Install the APK by sideloading, then open **Home Display** on the TV.
+1. Install the APK by sideloading, then open **Roompane** on the TV.
 2. Enter the server URL, such as `http://raspberrypi.local:3000`.
 3. Choose **Load screens from this server**, select a profile, then save.
 4. Leave automatic viewing enabled to show that screen whenever the app opens.
-5. For screensaver use, select Home Display in the TV's screensaver settings.
+5. For screensaver use, select Roompane in the TV's screensaver settings.
 
 Back or the remote Menu button returns from viewing to the native app menu.
 Screensaver availability and timing are controlled by the TV firmware; some

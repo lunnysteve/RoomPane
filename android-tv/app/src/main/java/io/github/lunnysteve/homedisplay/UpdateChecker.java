@@ -62,7 +62,7 @@ final class UpdateChecker {
                 if (finalVersion != null) {
                     String url = "https://github.com/" + REPO + "/releases/download/v" + finalVersion + "/home-display-tv-v" + finalVersion + ".apk";
                     new AlertDialog.Builder(activity)
-                        .setTitle("Home Display update available")
+                        .setTitle("Roompane update available")
                         .setMessage("Version " + finalVersion + " is ready. Download it and open Android's installer?")
                         .setPositiveButton("Download and install", (dialog, which) -> installer.download(url, finalVersion))
                         .setNegativeButton("Later", null)

@@ -26,7 +26,7 @@ with tempfile.TemporaryDirectory() as data:
             block('clock','clock',30,100,470,170,120,font='heavy'),
             block('weather','weather',520,100,250,170,30),
             block('note','text',40,300,720,60,28,'Bins out tonight · Recycling week',font='serif'),
-            block('footer','text',40,400,720,44,18,'HOME DISPLAY · KITCHEN','#70b7ff',weight='600')]
+            block('footer','text',40,400,720,44,18,'ROOMPANE · KITCHEN','#70b7ff',weight='600')]
     config['pages']=[dict(id='home',name='Kitchen morning',url='design-display.html?id=home',time=30,active=True,design=dict(theme='midnight',bg='#0b1324',fg='#f1f5fb',accent='#70b7ff',blocks=blocks)),
                      dict(id='overview',name='Time, weather & humidity',url='display.html',time=30,active=True),
                      dict(id='weather',name='Weather',url='weather.html',time=30,active=True),

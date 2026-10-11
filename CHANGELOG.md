@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.5
+
+- Introduce Roompane branding across Studio, Android TV, Pi launcher, documentation and release presentation.
+- Add a new geometric app icon and Android TV banner. Existing installation paths and release asset URLs remain compatible with earlier versions.
+
 ## 1.3.4
 
 - Fix Android TV settings entry from the system screensaver and avoid opening the TV keyboard automatically.

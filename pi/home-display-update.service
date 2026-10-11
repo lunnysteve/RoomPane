@@ -1,5 +1,5 @@
 [Unit]
-Description=Install a verified Home Display GitHub release
+Description=Install a verified Roompane GitHub release
 After=network-online.target
 
 [Service]

@@ -1,5 +1,5 @@
 'use strict';
-// Home Display Studio. plugin-studio.js extends the plugin form and the designer through
+// Roompane Studio. plugin-studio.js extends the plugin form and the designer through
 // the shared globals below (editPlugin, pluginInput, showProps, add, makeEditable…).
 const $ = id => document.getElementById(id);
 const themes = {midnight:['#0b1324','#f1f5fb','#70b7ff'],paper:['#f1eee7','#263244','#b85c32'],forest:['#102820','#f0f5e9','#87d4a4'],sunset:['#301c35','#fff2e3','#ffb471']};

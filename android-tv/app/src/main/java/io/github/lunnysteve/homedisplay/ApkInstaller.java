@@ -34,7 +34,7 @@ final class ApkInstaller {
             long previous = activity.getSharedPreferences("display", 0).getLong(DOWNLOAD_ID, -1);
             if (previous >= 0) { manager().remove(previous); clear(previous); }
             DownloadManager.Request request = new DownloadManager.Request(source)
-                .setTitle("Home Display TV " + version)
+                .setTitle("Roompane TV " + version)
                 .setDescription("Downloading the signed update")
                 .setMimeType("application/vnd.android.package-archive")
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
@@ -65,7 +65,7 @@ final class ApkInstaller {
         shownId = id;
         int currentGeneration = ++generation;
         dialog = new AlertDialog.Builder(activity)
-            .setTitle("Downloading Home Display update")
+            .setTitle("Downloading Roompane update")
             .setMessage("Starting download…")
             .setNegativeButton("Cancel", (box, which) -> { manager().remove(id); clear(id); }).create();
         dialog.show();
@@ -84,7 +84,7 @@ final class ApkInstaller {
                 dialog.dismiss();
                 Intent install = new Intent(Intent.ACTION_INSTALL_PACKAGE);
                 install.setDataAndType(apk, "application/vnd.android.package-archive");
-                install.setClipData(ClipData.newRawUri("Home Display update", apk));
+                install.setClipData(ClipData.newRawUri("Roompane update", apk));
                 install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 activity.startActivity(install);
                 return;

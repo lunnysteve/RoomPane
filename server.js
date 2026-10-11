@@ -46,7 +46,7 @@ function authorized(req, res, next) {
   if (/^Basic /i.test(req.headers.authorization || '')) credentials = Buffer.from(req.headers.authorization.slice(6), 'base64').toString();
   const separator = credentials.indexOf(':');
   if (separator >= 0 && credentials.slice(0, separator) === 'admin' && verifyPassword(credentials.slice(separator + 1), expected)) return next();
-  res.set('WWW-Authenticate', 'Basic realm="Home Display", charset="UTF-8"').status(401).send('Admin login required.');
+  res.set('WWW-Authenticate', 'Basic realm="Roompane", charset="UTF-8"').status(401).send('Admin login required.');
 }
 app.use((req, res, next) => {
   if (['POST', 'DELETE', 'PUT', 'PATCH'].includes(req.method) && req.headers.origin) {
@@ -194,6 +194,6 @@ app.use((err, req, res, next) => {
   res.status(err instanceof multer.MulterError || /filename/.test(err.message) ? 400 : 500).json({ error: err instanceof multer.MulterError || /filename/.test(err.message) ? err.message : 'Request failed.' });
 });
 app.listen(PORT, process.env.HOST || '0.0.0.0', () => {
-  console.log(`Home Display listening on port ${PORT}`);
+  console.log(`Roompane listening on port ${PORT}`);
   if (!process.env.HOME_DISPLAY_ADMIN_PASSWORD_HASH) console.warn('Warning: HOME_DISPLAY_ADMIN_PASSWORD_HASH is not set, so anyone who can reach this server can change it. Create one with: node password.js');
 });

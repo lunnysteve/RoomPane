@@ -1,1 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="42" fill="#142133"/><rect x="28" y="40" width="136" height="92" rx="12" fill="none" stroke="#70b7ff" stroke-width="10"/><path d="M72 153h48M96 133v20" stroke="#70b7ff" stroke-width="10" stroke-linecap="round"/><path d="M51 66h48M51 86h30" stroke="#f1f5fb" stroke-width="8" stroke-linecap="round"/><circle cx="132" cy="85" r="17" fill="#87d4a4"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="Roompane">
+  <rect width="192" height="192" rx="42" fill="#142133"/>
+  <rect x="28" y="28" width="136" height="136" rx="22" fill="#20364d"/>
+  <rect x="42" y="42" width="58" height="108" rx="10" fill="#70b7ff"/>
+  <rect x="112" y="42" width="38" height="50" rx="9" fill="#f1f5fb"/>
+  <rect x="112" y="104" width="38" height="46" rx="9" fill="#87d4a4"/>
+</svg>

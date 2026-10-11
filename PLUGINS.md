@@ -1,6 +1,6 @@
-# Home Display plugin guide
+# Roompane plugin guide
 
-Plugins extend Home Display with the devices and services people have at home. A reusable **definition** describes an integration; each user creates a **connection** with their own address, credentials and settings. A connection can be a full rotating page, a movable designer block, or both.
+Plugins extend Roompane with the devices and services people have at home. A reusable **definition** describes an integration; each user creates a **connection** with their own address, credentials and settings. A connection can be a full rotating page, a movable designer block, or both.
 
 ## Four examples to start with
 
@@ -72,12 +72,12 @@ For Google Photos, download selected photos or export them, extract the image fi
 1. Open Google Calendar in a desktop browser.
 2. Open **Settings**, choose the calendar under **Settings for my calendars**, then **Integrate calendar**.
 3. Copy **Secret address in iCal format**. For an intentionally public calendar, its public iCal address also works.
-4. Choose **Calendar** in Home Display and paste it into **Private iCalendar feed URL**.
+4. Choose **Calendar** in Roompane and paste it into **Private iCalendar feed URL**.
 5. Leave the Home Assistant source and entity fields empty, choose the number of days ahead, then test and save.
 
 Google Calendar may not provide a secret iCal address for every account or managed organisation. You can use an allowed public feed, export an `.ics` file, or connect a Home Assistant calendar instead.
 
-Treat a secret iCal address like a password. Home Display stores it privately and does not return it to display browsers or the connection listing. The field is blank when editing; leaving it blank keeps the saved address, and **Clear saved feed URL** removes it.
+Treat a secret iCal address like a password. Roompane stores it privately and does not return it to display browsers or the connection listing. The field is blank when editing; leaving it blank keeps the saved address, and **Clear saved feed URL** removes it.
 
 ### Other calendar sources
 
@@ -142,7 +142,7 @@ Definitions cannot replace built-in IDs. Reinstalling the same community ID upda
 4. Enter the source, credential and settings, then test and save.
 5. Use the new definition’s button in the page designer, or include its full page in rotation.
 
-Share the two files and a short README explaining the source API, authentication, expected response, setup, supported Home Display schema version and screenshots. Include no user addresses, credentials or private feed links. The installable [power-meter example](plugin-examples/) is a starting point.
+Share the two files and a short README explaining the source API, authentication, expected response, setup, supported Roompane schema version and screenshots. Include no user addresses, credentials or private feed links. The installable [power-meter example](plugin-examples/) is a starting point.
 
 ## Renderer SDK
 

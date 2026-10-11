@@ -31,7 +31,7 @@ module.exports = function createBackups(dataDir, validContentName, resetCaches) 
   }
   async function unpack(buffer, password) {
     passwordCheck(password);
-    if (buffer.length > PACKED_LIMIT || buffer.length < MAGIC.length + 44 || !buffer.subarray(0, MAGIC.length).equals(MAGIC)) throw Error('Choose a Home Display .hdbackup file.');
+    if (buffer.length > PACKED_LIMIT || buffer.length < MAGIC.length + 44 || !buffer.subarray(0, MAGIC.length).equals(MAGIC)) throw Error('Choose a Roompane .hdbackup file.');
     const offset = MAGIC.length;
     const key = await scrypt(password, buffer.subarray(offset, offset + 16), 32);
     let plaintext;

@@ -1,8 +1,8 @@
-<p align="center"><img src="app-icon.svg" width="88" alt="Home Display logo"></p>
+<p align="center"><img src="app-icon.svg" width="88" alt="Roompane logo"></p>
 
-<h1 align="center">Home Display</h1>
+<h1 align="center">Roompane</h1>
 
-<p align="center"><strong>A wall dashboard for your home that you design in the browser.</strong></p>
+<p align="center"><strong>Your home, at a glance.</strong><br>A wall dashboard you design in the browser.</p>
 
 <p align="center">
   <a href="INSTALL.md">Install</a> ·
@@ -12,9 +12,9 @@
   <a href="CHANGELOG.md">Changelog</a>
 </p>
 
-![Six Home Display pages: a custom designed page, time with weather and humidity, weather, clock, humidity and the night sky](docs/images/display-preview.png)
+![Six Roompane pages: a custom designed page, time with weather and humidity, weather, clock, humidity and the night sky](docs/images/display-preview.png)
 
-Home Display turns a Raspberry Pi and a small screen into a rotating dashboard for the time, the weather, the moon, your photos and calendar, and devices around the house such as a 3D printer or Home Assistant. You manage everything from a phone or laptop on the same network. No cloud account is needed, and everything runs on your own hardware.
+Roompane turns a Raspberry Pi and a small screen into a rotating dashboard for the time, the weather, the moon, your photos and calendar, and devices around the house such as a 3D printer or Home Assistant. You manage everything from a phone or laptop on the same network. No cloud account is needed, and everything runs on your own hardware.
 
 ## Features
 
@@ -93,8 +93,8 @@ The app checks for newer APKs when opened and shows a download prompt. Its
 settings screen also has a manual **Check for app updates** button.
 
 1. Download `home-display-tv-vX.Y.Z.apk` from [Releases](https://github.com/lunnysteve/home-display/releases) and sideload it onto the TV.
-2. Open **Home Display**, enter your server URL and pick a screen.
-3. Optionally, choose Home Display as the TV's screensaver.
+2. Open **Roompane**, enter your server URL and pick a screen.
+3. Optionally, choose Roompane as the TV's screensaver.
 
 It needs Android 6 or newer. Whether the screensaver option appears depends on the TV's firmware. Android TV support is new, so reports from real devices are very welcome. See [Android TV setup](android-tv/README.md).
 
@@ -106,7 +106,7 @@ It needs Android 6 or newer. Whether the screensaver option appears depends on t
 
 ## Development
 
-Home Display is a small Node.js (22 or newer) server with plain HTML, CSS and JavaScript pages. There is no build step.
+Roompane is a small Node.js (22 or newer) server with plain HTML, CSS and JavaScript pages. There is no build step.
 
 ```bash
 npm ci
@@ -144,10 +144,10 @@ python tools/capture-screenshots.py   # regenerates the images in this README
 
 ## Contributing
 
-Bug reports, hardware test results, documentation fixes and plugin ideas are all welcome. When you report a problem, include your device model, OS version, Home Display version (shown under Updates) and the steps to reproduce it. Please keep credentials, personal settings and uploaded media out of issues and pull requests.
+Bug reports, hardware test results, documentation fixes and plugin ideas are all welcome. When you report a problem, include your device model, OS version, Roompane version (shown under Updates) and the steps to reproduce it. Please keep credentials, personal settings and uploaded media out of issues and pull requests.
 
 Release steps are in [RELEASING.md](RELEASING.md).
 
 ## Licence
 
-Home Display is released under the [MIT Licence](LICENSE). The bundled DejaVu fonts have their own licence in [studio-font-license.txt](studio-font-license.txt).
+Roompane is released under the [MIT Licence](LICENSE). The bundled DejaVu fonts have their own licence in [studio-font-license.txt](studio-font-license.txt).

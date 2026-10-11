@@ -1,5 +1,5 @@
 [Unit]
-Description=Home Display dashboard server
+Description=Roompane dashboard server
 After=network.target
 
 [Service]

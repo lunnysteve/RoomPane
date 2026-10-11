@@ -26,10 +26,10 @@ public class MainActivity extends Activity {
     private void showMenu() {
         destroyDisplay();
         LinearLayout layout = new LinearLayout(this); layout.setOrientation(LinearLayout.VERTICAL); layout.setPadding(48,40,48,40);
-        TextView title=new TextView(this);title.setText("Home Display TV");title.setTextSize(30);layout.addView(title);
+        TextView title=new TextView(this);title.setText("Roompane TV");title.setTextSize(30);layout.addView(title);
         Button open=new Button(this);open.setText("View saved screen");open.setEnabled(!DisplayWebView.url(this).isEmpty());open.setOnClickListener(v->{menuRequested=false;showDisplay(DisplayWebView.url(this));});layout.addView(open);
         Button setup=new Button(this);setup.setText("Choose screen / settings");setup.setOnClickListener(v->{menuRequested=true;startActivityForResult(new Intent(this,SettingsActivity.class),1);});layout.addView(setup);
-        TextView hint=new TextView(this);hint.setText("Press Back or the remote Menu button from the display to return here. Configure Home Display as a screensaver in your TV system settings.");hint.setTextSize(18);layout.addView(hint);
+        TextView hint=new TextView(this);hint.setText("Press Back or the remote Menu button from the display to return here. Configure Roompane as a screensaver in your TV system settings.");hint.setTextSize(18);layout.addView(hint);
         setContentView(layout);setup.requestFocus();
     }
     private void showDisplay(String url) {

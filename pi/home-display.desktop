@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=Home Display
+Name=Roompane
 Comment=Local dashboard kiosk
 Exec=/usr/local/bin/home-display-kiosk
 Type=Application
