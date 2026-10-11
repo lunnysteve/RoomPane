@@ -1,7 +1,12 @@
 # Home Display for Android TV
 
+The settings screen displays a QR code for the selected Pi's `/admin` Studio page.
+Scan it with a phone on the same network and sign in to edit the display. App
+updates download inside Home Display and then open Android's package installer;
+the TV may ask once to allow installs from this app.
+
 The app checks public GitHub releases when opened. If a newer signed APK is
-available, a prompt opens its download on the TV. You can also use **Check for app
+available, a prompt downloads it in the app and opens Android's installer. You can also use **Check for app
 updates** in the app settings. Complete installation through the TV's installer;
 upgrades must use the same signing key as the installed app.
 

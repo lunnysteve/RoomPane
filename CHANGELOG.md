@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.4
+
+- Fix Android TV settings entry from the system screensaver and avoid opening the TV keyboard automatically.
+- Show a QR code in TV settings that opens the selected Pi's Studio page on a phone.
+- Download TV updates inside the app and open Android's installer directly.
+
 ## 1.3.3
 
 - Show a timestamped install log below Studio updates, with progress through verification, dependency installation, restart, and rollback.

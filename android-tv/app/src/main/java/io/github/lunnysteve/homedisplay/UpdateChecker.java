@@ -2,8 +2,6 @@ package io.github.lunnysteve.homedisplay;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Intent;
-import android.net.Uri;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
@@ -16,7 +14,7 @@ final class UpdateChecker {
     private static final String API = "https://api.github.com/repos/" + REPO + "/releases/latest";
     interface Result { void done(String message); }
 
-    static void check(Activity activity, boolean manual, Result result) {
+    static void check(Activity activity, ApkInstaller installer, boolean manual, Result result) {
         new Thread(() -> {
             String message = "You are up to date.";
             String version = null;
@@ -65,13 +63,8 @@ final class UpdateChecker {
                     String url = "https://github.com/" + REPO + "/releases/download/v" + finalVersion + "/home-display-tv-v" + finalVersion + ".apk";
                     new AlertDialog.Builder(activity)
                         .setTitle("Home Display update available")
-                        .setMessage("Version " + finalVersion + " is ready. Open the APK download on this TV?")
-                        .setPositiveButton("Open download", (dialog, which) -> {
-                            try { activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
-                            catch (RuntimeException error) {
-                                new AlertDialog.Builder(activity).setMessage("No browser is available on this TV. Open " + url + " in Downloader.").setPositiveButton("OK", null).show();
-                            }
-                        })
+                        .setMessage("Version " + finalVersion + " is ready. Download it and open Android's installer?")
+                        .setPositiveButton("Download and install", (dialog, which) -> installer.download(url, finalVersion))
                         .setNegativeButton("Later", null)
                         .show();
                 } else if (manual) {
