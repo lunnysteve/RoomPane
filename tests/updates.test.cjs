@@ -1,22 +1,42 @@
-const {test}=require('node:test');
-const assert=require('node:assert/strict');
-const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const createUpdates=require('../updates');
-test('release versions compare numerically and private token never leaves update results',async()=>{
-  assert.equal(createUpdates.compare('1.10.0','1.9.9'),1);
-  assert.equal(createUpdates.compare('1.1.0','2.0.0'),-1);
-  assert.equal(createUpdates.compare('1.1.0','1.1.0'),0);
-  const data=fs.mkdtempSync(path.join(os.tmpdir(),'display-update-')),original=global.fetch;
-  const next=String(Number(require('../package.json').version.split('.')[0])+1)+'.0.0';
- let calls=0;
-  global.fetch=async(url,options)=>{calls++;assert.equal(options.headers.Authorization,'Bearer github_pat_test_private_token_12345');return {ok:true,status:200,json:async()=>({tag_name:'v'+next,html_url:'https://github.com/lunnysteve/home-display/releases/tag/v'+next,assets:[{name:'home-display-v'+next+'.tar.gz'},{name:'SHA256SUMS'}]})};};
-  try{const updates=createUpdates(data);updates.saveToken('github_pat_test_private_token_12345');const result=await updates.check();assert.equal(result.available,true);assert.equal(result.installable,true);assert.ok(!JSON.stringify(result).includes('private_token'));await updates.check();assert.equal(calls,1);await updates.check(true);assert.equal(calls,2);assert.throws(()=>updates.saveToken('bad\ntoken'));}finally{global.fetch=original;fs.rmSync(data,{recursive:true,force:true});}
+const {test} = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+const createUpdates = require('../updates');
+
+test('public release checks compare versions and cache results', async () => {
+  assert.equal(createUpdates.compare('1.10.0', '1.9.9'), 1);
+  assert.equal(createUpdates.compare('1.1.0', '2.0.0'), -1);
+  assert.equal(createUpdates.compare('1.1.0', '1.1.0'), 0);
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'display-update-'));
+  const original = global.fetch;
+  const next = String(Number(require('../package.json').version.split('.')[0]) + 1) + '.0.0';
+  let calls = 0;
+  global.fetch = async (url, options) => {
+    calls++;
+    assert.equal(url, 'https://api.github.com/repos/lunnysteve/home-display/releases/latest');
+    assert.equal(options.headers.Authorization, undefined);
+    return {ok: true, status: 200, json: async () => ({tag_name: 'v' + next, assets: [{name: 'home-display-v' + next + '.tar.gz'}, {name: 'SHA256SUMS'}]})};
+  };
+  try {
+    const updates = createUpdates(data);
+    const result = await updates.check();
+    assert.equal(result.available, true);
+    assert.equal(result.installable, true);
+    assert.equal(result.releaseUrl, 'https://github.com/lunnysteve/home-display/releases/tag/v' + next);
+    await updates.check();
+    assert.equal(calls, 1);
+    await updates.check(true);
+    assert.equal(calls, 2);
+  } finally { global.fetch = original; fs.rmSync(data, {recursive: true, force: true}); }
 });
 
-test('public release checks work without a GitHub token',async()=>{
- const data=fs.mkdtempSync(path.join(os.tmpdir(),'display-public-update-')),original=global.fetch,originalToken=process.env.HOME_DISPLAY_GITHUB_TOKEN;
- delete process.env.HOME_DISPLAY_GITHUB_TOKEN;
- global.fetch=async(url,options)=>{assert.equal(options.headers.Authorization,undefined);return {ok:true,status:200,json:async()=>({tag_name:'v'+require('../package.json').version,html_url:'https://github.com/lunnysteve/home-display/releases',assets:[{name:'home-display-v'+require('../package.json').version+'.tar.gz'},{name:'SHA256SUMS'}]})};};
- try{const updates=createUpdates(data);const result=await updates.check();assert.equal(result.available,false);assert.equal(result.message,'You are up to date.');assert.equal(updates.tokenConfigured(),false);}
- finally{global.fetch=original;if(originalToken!==undefined)process.env.HOME_DISPLAY_GITHUB_TOKEN=originalToken;fs.rmSync(data,{recursive:true,force:true});}
+test('same version and missing release are reported clearly', async () => {
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'display-update-'));
+  const original = global.fetch;
+  try {
+    global.fetch = async () => ({ok: true, status: 200, json: async () => ({tag_name: 'v' + require('../package.json').version, assets: []})});
+    assert.equal((await createUpdates(data).check()).message, 'You are up to date.');
+    global.fetch = async () => ({ok: false, status: 404});
+    assert.equal((await createUpdates(data).check()).message, 'No published release was found.');
+  } finally { global.fetch = original; fs.rmSync(data, {recursive: true, force: true}); }
 });

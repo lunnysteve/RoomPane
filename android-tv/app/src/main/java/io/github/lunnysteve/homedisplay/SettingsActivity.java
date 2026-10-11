@@ -24,6 +24,7 @@ public class SettingsActivity extends Activity {
         auto=new CheckBox(this);auto.setText("Open this screen automatically when the app launches");auto.setChecked(getSharedPreferences("display",0).getBoolean("auto",true));layout.addView(auto);
         Button save=new Button(this);save.setText("Save and view");save.setOnClickListener(v->{String url=address.getText().toString().trim();Uri uri=Uri.parse(url);if(!valid(uri)){status.setText("Enter a complete HTTP or HTTPS screen URL.");return;}getSharedPreferences("display",0).edit().putString("url",url).putBoolean("auto",auto.isChecked()).apply();finish();});layout.addView(save);
         Button saver=new Button(this);saver.setText("Open TV screensaver settings");saver.setOnClickListener(v->{try{startActivity(new Intent(Settings.ACTION_DREAM_SETTINGS));}catch(RuntimeException error){status.setText("This TV does not expose screensaver settings. Use the launcher viewer instead.");}});layout.addView(saver);
+        Button updates=new Button(this);updates.setText("Check for app updates");updates.setOnClickListener(v->{status.setText("Checking GitHub releases...");UpdateChecker.check(this, true, message->status.setText(message));});layout.addView(updates);
         status=new TextView(this);status.setText("Create screens in the web admin, then select their endpoint here. Screensaver selection is controlled by the TV.");status.setTextSize(17);layout.addView(status);
         ScrollView scroll=new ScrollView(this);scroll.addView(layout);setContentView(scroll);address.requestFocus();
     }

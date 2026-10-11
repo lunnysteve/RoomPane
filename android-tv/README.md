@@ -1,5 +1,10 @@
 # Home Display for Android TV
 
+The app checks public GitHub releases when opened. If a newer signed APK is
+available, a prompt opens its download on the TV. You can also use **Check for app
+updates** in the app settings. Complete installation through the TV's installer;
+upgrades must use the same signing key as the installed app.
+
 The APK displays a screen endpoint from the Home Display server. It includes a
 TV launcher entry and a DreamService screensaver. Android 6 or newer and a working
 Android System WebView are required.

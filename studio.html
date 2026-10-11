@@ -174,7 +174,7 @@
 <!-- Backup -->
 <section class="panel narrow" data-for="settings">
   <h2>Backup and restore</h2>
-  <p class="hint">Save your pages, screen profiles, fonts, uploads and plugin connections in an encrypted backup. Plugin credentials are included. Your admin password and GitHub token stay on this device.</p>
+  <p class="hint">Save your pages, screen profiles, fonts, uploads and plugin connections in an encrypted backup. Plugin credentials are included. Your admin password stays on this device.</p>
   <label for="backup-password">Backup password</label><input id="backup-password" type="password" autocomplete="new-password" minlength="12" placeholder="At least 12 characters">
   <p class="hint">Keep this password somewhere safe: it cannot be recovered. Browser backups support up to 50 MB of settings and media.</p>
   <button id="backup-export">Download encrypted backup</button>
@@ -190,11 +190,6 @@
   <p id="update-message" class="hint"></p>
   <div class="row" style="flex-wrap:wrap"><button id="check-updates" style="flex:0 1 auto">Check for updates</button><button id="install-update" class="primary" style="flex:0 1 auto" disabled>Install update</button><a id="release-link" hidden target="_blank" rel="noopener" style="flex:0 1 auto;align-self:center">Release notes</a></div>
   <p id="update-install-state" class="hint"></p>
-  <details id="token-options" hidden style="margin-top:18px"><summary>Private repository access</summary>
-    <label for="github-token">GitHub access token</label><input id="github-token" type="password" autocomplete="off" placeholder="Fine-grained token with Contents: read-only">
-    <button id="save-github-token" style="margin-top:8px">Save token</button>
-    <p id="github-token-state" class="hint">Only needed while the repository is private. Leave empty and save to remove a stored token.</p>
-  </details>
 </section>
 </main>
 

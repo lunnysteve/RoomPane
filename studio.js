@@ -395,13 +395,10 @@ async function checkUpdates(force = false) {
     $('update-message').textContent = result.message; $('install-update').disabled = !result.available || !result.installable;
     $('nav-updates').classList.toggle('badge', !!result.available); $('nav-updates').title = result.available ? 'Update available' : '';
     $('release-link').hidden = !result.releaseUrl; if (result.releaseUrl) $('release-link').href = result.releaseUrl;
-    // The token is only relevant while the release repository is private.
-    $('token-options').hidden = !result.tokenConfigured && (result.available || !!result.latest);
     $('update-install-state').textContent = result.state ? result.state.state + ': ' + result.state.message : '';
   } catch (error) { $('update-message').textContent = error.message; } finally { $('check-updates').disabled = false; }
 }
 $('check-updates').onclick = () => checkUpdates(true);
-$('save-github-token').onclick = async () => { try { await post('/api/updates/token', {token:$('github-token').value.trim()}); $('github-token').value = ''; $('github-token-state').textContent = 'Access token saved. Checking releases…'; await checkUpdates(true); } catch (error) { $('github-token-state').textContent = error.message; } };
 $('install-update').onclick = async () => {
   if (!confirm('Install the latest release? The server restarts; settings and uploads are kept.')) return;
   $('install-update').disabled = true;

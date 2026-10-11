@@ -89,6 +89,9 @@ To write your own plugin, see the [plugin guide](PLUGINS.md) and the [power-mete
 
 ## Android TV
 
+The app checks for newer APKs when opened and shows a download prompt. Its
+settings screen also has a manual **Check for app updates** button.
+
 1. Download `home-display-tv-vX.Y.Z.apk` from [Releases](https://github.com/lunnysteve/home-display/releases) and sideload it onto the TV.
 2. Open **Home Display**, enter your server URL and pick a screen.
 3. Optionally, choose Home Display as the TV's screensaver.

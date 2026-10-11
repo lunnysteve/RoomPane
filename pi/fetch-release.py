@@ -17,15 +17,10 @@ SYSTEM_FILES={
     'home-display.sudoers':(Path('/etc/sudoers.d/home-display'),0o440),
     'home-display-update.service':(Path('/etc/systemd/system/home-display-update.service'),0o644),
 }
-TOKEN=os.environ.get('HOME_DISPLAY_GITHUB_TOKEN','')
-if not TOKEN:
-    try:TOKEN=json.loads((DATA/'github-token.json').read_text()).get('token','')
-    except (OSError,ValueError):pass
 class Redirect(HTTPRedirectHandler):
     def redirect_request(self,request,fp,code,msg,headers,newurl):
         if urlparse(newurl).scheme!='https': raise ValueError('Insecure download redirect rejected')
         redirected=super().redirect_request(request,fp,code,msg,headers,newurl)
-        if urlparse(newurl).netloc!=urlparse(request.full_url).netloc: redirected.remove_header('Authorization')
         return redirected
 opener=build_opener(Redirect())
 def status(state,message,version=None):
@@ -38,7 +33,6 @@ def status(state,message,version=None):
 def download(url,target=None,limit=150*1024*1024,asset=False):
     if not url.startswith('https://api.github.com/repos/'+REPO+'/'): raise ValueError('Untrusted release URL')
     headers={'User-Agent':'home-display-updater','Accept':'application/octet-stream' if asset else 'application/vnd.github+json'}
-    if TOKEN: headers['Authorization']='Bearer '+TOKEN
     with opener.open(Request(url,headers=headers),timeout=30) as response:
         chunks=[];size=0
         while True:

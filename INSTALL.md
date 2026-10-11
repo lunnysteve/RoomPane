@@ -29,7 +29,7 @@ Pi 2 is a compatibility target, not a performance guarantee. The kiosk uses soft
 
 The display opens `http://127.0.0.1:3000/`. From a phone on the same network, open `http://YOUR-HOSTNAME.local:3000/admin` or `http://PI-IP:3000/admin`. Sign in as `admin` with the password you chose. Set weather latitude, longitude, timezone, page rotation, and sleep/wake times. Save the configuration.
 
-While the repository is private, cloning and release downloads require GitHub access. Once public, the clone command in [README.md](README.md) needs no authentication. Public update checks and downloads need no token; private releases use the optional access setting under **Updates**.
+Clone and release downloads use the public repository. Update checks need no GitHub token.
 
 ## Trial alongside an existing kiosk
 
@@ -148,7 +148,7 @@ Use Node 22 or newer. Without `HOME_DISPLAY_DATA_DIR`, runtime data stays in the
 
 In **Settings → Backup and restore**, save your changes first, enter a backup password of at least 12 characters, then download the `.hdbackup` file. Store the file and password safely. The password cannot be reset or recovered.
 
-Browser backups use authenticated AES-256-GCM encryption with a password-derived key. They contain saved settings, pages, uploaded files/fonts, screen schedules and plugin connections, including private plugin credentials. They exclude the device's admin password, GitHub token and operating-system configuration. The browser flow supports up to **50 MB of settings/media and 2,000 files** to keep memory use bounded on older Pis.
+Browser backups use authenticated AES-256-GCM encryption with a password-derived key. They contain saved settings, pages, uploaded files/fonts, screen schedules and plugin connections, including private plugin credentials. They exclude the device's admin password and operating-system configuration. The browser flow supports up to **50 MB of settings/media and 2,000 files** to keep memory use bounded on older Pis.
 
 To restore, choose the file and enter its password. Studio checks the password and contents, then asks before replacing the saved configuration and media. Unsaved editor changes are discarded only after a successful restore. The previous data remains in a private `.before-restore-*` folder inside `/var/lib/home-display` for manual recovery. Those folders can be removed by the administrator once the restored display has been checked; they are excluded from subsequent browser backups.
 
@@ -165,7 +165,7 @@ sudo systemctl stop home-display && (
 )
 ```
 
-Copy the encrypted file off the SD card. This is a data backup, not an operating-system image. To recover onto another Pi, install Home Display first, decrypt your own backup into a private temporary directory, inspect the archive, stop `home-display`, and restore its `var/lib/home-display` and `etc/home-display` directories to `/`. Set `/var/lib/home-display` ownership to `home-display:home-display`, retain restrictive permissions on `/etc/home-display/environment`, then restart the service. Reapply any hardware-specific DSI settings separately. A full restore replaces the admin password and GitHub credentials with those from the backup.
+Copy the encrypted file off the SD card. This is a data backup, not an operating-system image. To recover onto another Pi, install Home Display first, decrypt your own backup into a private temporary directory, inspect the archive, stop `home-display`, and restore its `var/lib/home-display` and `etc/home-display` directories to `/`. Set `/var/lib/home-display` ownership to `home-display:home-display`, retain restrictive permissions on `/etc/home-display/environment`, then restart the service. Reapply any hardware-specific DSI settings separately. A full restore replaces the admin password with the one from the backup.
 
 ### Screen sleep behavior
 

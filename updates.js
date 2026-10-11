@@ -1,10 +1,46 @@
 'use strict';
-const fs=require('fs'),path=require('path');
-const version=require('./package.json').version;
-function compare(a,b){const aa=a.split('.').map(Number),bb=b.split('.').map(Number);for(let i=0;i<3;i++){if(aa[i]!==bb[i])return aa[i]>bb[i]?1:-1;}return 0;}
-module.exports=function createUpdates(dataDir){let cached=null,checked=0,pending=null;const repo=process.env.HOME_DISPLAY_UPDATE_REPO||'lunnysteve/home-display';
-const tokenFile=path.join(dataDir,'github-token.json');
-function token(){if(process.env.HOME_DISPLAY_GITHUB_TOKEN)return process.env.HOME_DISPLAY_GITHUB_TOKEN;try{return JSON.parse(fs.readFileSync(tokenFile,'utf8')).token||'';}catch{return '';}}
-async function check(force=false){if(cached&&!force&&Date.now()-checked<3600000)return cached;if(pending)return pending;pending=(async()=>{const result={version,repo,available:false,latest:null,releaseUrl:null,checkedAt:new Date().toISOString(),message:''};try{if(!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(repo))throw Error('Invalid update repository.');const headers={Accept:'application/vnd.github+json','User-Agent':'home-display/'+version};if(token())headers.Authorization='Bearer '+token();const response=await fetch('https://api.github.com/repos/'+repo+'/releases/latest',{headers,signal:AbortSignal.timeout(10000)});if(response.status===404){result.message='No published release is accessible. A private repository needs a GitHub token on the Pi.';}else{if(!response.ok)throw Error('GitHub returned HTTP '+response.status);const release=await response.json();if(!/^v\d+\.\d+\.\d+$/.test(release.tag_name)||release.draft||release.prerelease)throw Error('Latest release does not use a stable version tag.');result.latest=release.tag_name.slice(1);result.releaseUrl=release.html_url;result.available=compare(result.latest,version)>0;result.installable=release.assets?.some(a=>a.name==='home-display-'+release.tag_name+'.tar.gz')&&release.assets?.some(a=>a.name==='SHA256SUMS');result.message=result.available?'Update available: '+result.latest:'You are up to date.';}}catch(error){result.message=error.message.startsWith('GitHub')||error.message.startsWith('Latest')||error.message.startsWith('Invalid')?error.message:'Unable to reach GitHub. Try again when online.';}cached=result;checked=Date.now();return result;})();try{return await pending;}finally{pending=null;}}
-return {version,check,tokenConfigured:()=>!!token(),saveToken(value){if(typeof value!=='string'||(value&&!/^[A-Za-z0-9_]{20,255}$/.test(value)))throw Error('Enter a GitHub personal access token.');fs.writeFileSync(tokenFile,JSON.stringify({token:value}),{mode:0o600});cached=null;checked=0;},state(){const file=path.join(dataDir,'update-status.json');try{return JSON.parse(fs.readFileSync(file,'utf8'));}catch{return null;}}};};
-module.exports.compare=compare;
+const fs = require('fs'), path = require('path');
+const version = require('./package.json').version;
+function compare(a, b) {
+  const left = a.split('.').map(Number), right = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) if (left[i] !== right[i]) return left[i] > right[i] ? 1 : -1;
+  return 0;
+}
+module.exports = function createUpdates(dataDir) {
+  let cached = null, checked = 0, pending = null;
+  const repo = process.env.HOME_DISPLAY_UPDATE_REPO || 'lunnysteve/home-display';
+  async function check(force = false) {
+    if (cached && !force && Date.now() - checked < 3600000) return cached;
+    if (pending) return pending;
+    pending = (async () => {
+      const result = {version, repo, available: false, latest: null, releaseUrl: null, checkedAt: new Date().toISOString(), message: ''};
+      try {
+        if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(repo)) throw Error('Invalid update repository.');
+        const response = await fetch('https://api.github.com/repos/' + repo + '/releases/latest', {
+          headers: {Accept: 'application/vnd.github+json', 'User-Agent': 'home-display/' + version},
+          signal: AbortSignal.timeout(10000)
+        });
+        if (response.status === 404) result.message = 'No published release was found.';
+        else {
+          if (!response.ok) throw Error('GitHub returned HTTP ' + response.status);
+          const release = await response.json();
+          if (!/^v\d+\.\d+\.\d+$/.test(release.tag_name) || release.draft || release.prerelease) throw Error('Latest release does not use a stable version tag.');
+          result.latest = release.tag_name.slice(1);
+          result.releaseUrl = 'https://github.com/' + repo + '/releases/tag/' + release.tag_name;
+          result.available = compare(result.latest, version) > 0;
+          result.installable = release.assets?.some(a => a.name === 'home-display-' + release.tag_name + '.tar.gz') && release.assets?.some(a => a.name === 'SHA256SUMS');
+          result.message = result.available ? 'Update available: ' + result.latest : 'You are up to date.';
+        }
+      } catch (error) {
+        result.message = /^(GitHub|Latest|Invalid)/.test(error.message) ? error.message : 'Unable to reach GitHub. Try again when online.';
+      }
+      cached = result; checked = Date.now(); return result;
+    })();
+    try { return await pending; } finally { pending = null; }
+  }
+  return {version, check, state() {
+    try { return JSON.parse(fs.readFileSync(path.join(dataDir, 'update-status.json'), 'utf8')); }
+    catch { return null; }
+  }};
+};
+module.exports.compare = compare;

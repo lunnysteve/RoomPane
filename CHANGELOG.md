@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.2
+
+- Android TV checks public releases on launch and offers a newer signed APK download; app settings include a manual check.
+- Pi and Studio update checks now use public releases without private repository token controls.
+- Removed an obsolete internal review note from the repository.
+
 ## 1.3.1
 
 - Fix `pi/update-studio.sh` putting the previous updater helpers back after a successful run, which stopped the 1.3.0 helper migration taking effect. A failed run now restores them, and the new sudoers file is checked before it is installed.
@@ -18,7 +24,6 @@
 - Redesigned Studio: a page list with live thumbnails, drag-to-reorder and on/off switches; a full-width page editor; one save bar with Discard; Settings for location, schedule, fonts and files.
 - Per-page schedules (hours and days) and adding any ready-made page or web address, ported from the old admin console, which is removed.
 - Screens shows the Pi's network address with a QR code, plus screen off/on, browser restart and reboot controls.
-- The private-repository token only appears under Updates when it is needed.
 - Countdown page no longer crashes once the countdown has finished.
 - Dependencies updated to fix security advisories in multer, proxy-addr and qs.
 - Admin passwords are hashed with salted scrypt (`node password.js`); existing SHA-256 hashes still work.
@@ -52,7 +57,6 @@
 
 - Focused Studio navigation for pages, screens, plugins, weather and updates.
 - Separate global weather and schedule settings from page appearance.
-- Optional private repository token settings; public releases need no token.
 - Public-facing README with installation instructions and interface screenshots.
 - Browser checks for navigation and mobile layout, plus token-free update checks.
 

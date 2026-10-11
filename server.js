@@ -82,8 +82,7 @@ for (const mode of ['inspect','restore']) app.post('/api/backups/'+mode, restore
 
 app.post('/api/screens',(req,res)=>{try{res.json({screen:screens.save(req.body)});}catch(error){res.status(400).json({error:error.message});}});
 app.delete('/api/screens/:id',(req,res)=>{screens.remove(req.params.id);res.json({success:true});});
-app.get('/api/updates',async(req,res)=>res.json({...await updates.check(req.query.check==='1'),state:updates.state(),tokenConfigured:updates.tokenConfigured()}));
-app.post('/api/updates/token',(req,res)=>{try{updates.saveToken(req.body.token);res.json({success:true});}catch(error){res.status(400).json({error:error.message});}});
+app.get('/api/updates',async(req,res)=>res.json({...await updates.check(req.query.check==='1'),state:updates.state()}));
 app.post('/api/updates/install',async(req,res)=>{if(process.env.HOME_DISPLAY_CONTROL!=='local')return res.status(503).json({error:'Automatic installation requires the standalone Pi setup.'});const update=await updates.check(true);if(!update.available||!update.installable)return res.status(400).json({error:update.message||'No installable update is available.'});execFile('/usr/bin/sudo',['-n','/usr/local/sbin/home-display-control','install_update'],{timeout:15000},error=>{if(error)return res.status(500).json({error:'Update service could not start. Install the latest updater helper on the Pi.'});res.status(202).json({success:true,message:'Update started.'});});});
 app.get('/api/plugin-catalog',(req,res)=>res.json({definitions:plugins.catalog()}));
 app.post('/api/plugin-definitions',(req,res)=>{try{res.json({definition:plugins.installDefinition(req.body)});}catch(error){res.status(400).json({error:error.message});}});
