@@ -42,6 +42,11 @@
       z-index: 1;
     }
 
+    /* Transform OpenStreetMap tiles into dark theme with zero API keys or watermarks */
+    .leaflet-tile {
+      filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(95%);
+    }
+
     /* Vignette gradient over map */
     .vignette {
       position: absolute;
@@ -335,10 +340,15 @@
         fadeAnimation: true
       }).setView([defaultLat, defaultLon], defaultZoom);
 
-      // Dark theme map tiles (CartoDB Dark Matter)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      // Free OpenStreetMap tiles with dark styling (no API key required, zero watermarks)
+      const cartoKey = params.get('carto_key') || params.get('key');
+      const tileUrl = params.get('tiles') || (cartoKey
+        ? `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`
+        : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+
+      L.tileLayer(tileUrl, {
         maxZoom: 19,
-        subdomains: 'abcd'
+        subdomains: cartoKey ? 'abcd' : 'abc'
       }).addTo(map);
 
       // Home Zone Circle & Home Marker

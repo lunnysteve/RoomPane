@@ -154,6 +154,10 @@
     .leaflet-control-zoom, .leaflet-control-attribution {
       display: none !important;
     }
+
+    .leaflet-tile {
+      filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(95%);
+    }
   </style>
 </head>
 <body>
@@ -202,8 +206,8 @@
       attributionControl: false
     }).setView([0, 0], 2);
 
-    // Dark Map tiles
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // Dark Map tiles using OpenStreetMap (free, no API key)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
     }).addTo(map);
 

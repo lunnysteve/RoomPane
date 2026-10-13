@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.7
+
+- Switch map tiles to free OpenStreetMap with dark theme filter, removing CARTO API key requirement and watermark banner.
+
 ## 1.3.6
 
 - Add Home Assistant Map preset page (`map.html`) with dark Leaflet map, entity location tracking, and status HUD.
