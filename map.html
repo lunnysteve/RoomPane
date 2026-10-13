@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Assistant Map</title>
+  <style>
+    /* Bundled DejaVu fonts so pages render the same without internet access */
+    @font-face { font-family: 'Display Sans'; src: url('/studio-sans.ttf') format('truetype'); font-weight: 100 600; font-display: swap; }
+    @font-face { font-family: 'Display Sans'; src: url('/studio-heavy.ttf') format('truetype'); font-weight: 700 900; font-display: swap; }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #000;
+      --panel-bg: rgba(10, 15, 28, 0.75);
+      --panel-border: rgba(255, 255, 255, 0.12);
+      --text: #fff;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent: #38bdf8;
+      --home-color: #10b981;
+      --away-color: #f59e0b;
+      --zone-color: #818cf8;
+    }
+
+    body, html {
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Display Sans', system-ui, sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #map {
+      width: 100vw;
+      height: 100vh;
+      background: #090d16;
+      z-index: 1;
+    }
+
+    /* Vignette gradient over map */
+    .vignette {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      background: radial-gradient(circle at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%),
+                  linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, transparent 18%, transparent 82%, rgba(0, 0, 0, 0.7) 100%);
+    }
+
+    /* Top Glass HUD Panel */
+    .top-panel {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 18px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+      animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .tag-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--home-color);
+      box-shadow: 0 0 10px var(--home-color);
+      animation: pulseDot 2s infinite;
+    }
+
+    .status-dot.standby {
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    .tag {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    /* Tracker Status Pills */
+    .people-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      max-width: 65vw;
+    }
+    .people-strip::-webkit-scrollbar { display: none; }
+
+    .person-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px 5px 6px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      font-size: 13px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .person-avatar-mini {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #2563eb;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      background-size: cover;
+      background-position: center;
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .person-info {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .person-name {
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .person-state {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .person-state.home { color: var(--home-color); font-weight: 600; }
+    .person-state.away { color: var(--away-color); }
+    .person-state.zone { color: var(--zone-color); }
+
+    /* Bottom Info Bar */
+    .bottom-panel {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 14px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .bottom-panel b { color: #fff; }
+
+    /* Custom Leaflet Markers */
+    .leaflet-control-zoom, .leaflet-control-attribution {
+      display: none !important;
+    }
+
+    .home-marker {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #064e3b;
+      border: 2px solid #10b981;
+      color: #fff;
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.7);
+    }
+
+    .home-marker::after {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 2px solid rgba(16, 185, 129, 0.4);
+      animation: homeRadar 2.5s infinite ease-out;
+    }
+
+    @keyframes homeRadar {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    .person-marker {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #1e293b;
+      border: 2.5px solid var(--home-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+      background-size: cover;
+      background-position: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .person-marker.away { border-color: var(--away-color); }
+    .person-marker.zone { border-color: var(--zone-color); }
+
+    .marker-badge {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid #000;
+      background: var(--home-color);
+    }
+
+    .person-marker.away .marker-badge { background: var(--away-color); }
+    .person-marker.zone .marker-badge { background: var(--zone-color); }
+
+    /* Custom Leaflet Tooltip */
+    .leaflet-tooltip-pane .custom-tooltip {
+      background: rgba(10, 15, 28, 0.9);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-family: 'Display Sans', sans-serif;
+      font-size: 11px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="vignette"></div>
+
+  <!-- Top Glass HUD -->
+  <div class="top-panel">
+    <div class="brand">
+      <div class="tag-row">
+        <span class="status-dot standby" id="statusDot"></span>
+        <span class="tag" id="statusTag">Home Assistant</span>
+      </div>
+      <div class="title" id="pageTitle">Home Map</div>
+    </div>
+    <div class="people-strip" id="peopleStrip">
+      <div class="person-chip" id="standbyChip">
+        <div class="person-avatar-mini">⌂</div>
+        <div class="person-info">
+          <span class="person-name">Home Base</span>
+          <span class="person-state home" id="standbyState">Active</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Coordinates / Status info -->
+  <div class="bottom-panel" id="bottomPanel">
+    <span id="coordsLabel">Home: <b>--</b></span>
+    <span>·</span>
+    <span id="updatedLabel">Live map</span>
+  </div>
+
+  <script src="/runtime-config.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    (function() {
+      const settings = window.DISPLAY_SETTINGS || {};
+      const params = new URLSearchParams(window.location.search);
+
+      // Home coordinates from settings or parameters
+      const defaultLat = parseFloat(params.get('lat')) || (Number.isFinite(settings.latitude) ? settings.latitude : 51.4185);
+      const defaultLon = parseFloat(params.get('lon')) || (Number.isFinite(settings.longitude) ? settings.longitude : -0.953);
+      const defaultZoom = parseInt(params.get('zoom'), 10) || 14;
+
+      const map = L.map('map', {
+        zoomControl: false,
+        attributionControl: false,
+        fadeAnimation: true
+      }).setView([defaultLat, defaultLon], defaultZoom);
+
+      // Dark theme map tiles (CartoDB Dark Matter)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        subdomains: 'abcd'
+      }).addTo(map);
+
+      // Home Zone Circle & Home Marker
+      const homeZoneCircle = L.circle([defaultLat, defaultLon], {
+        radius: 120,
+        color: '#10b981',
+        weight: 1.5,
+        fillColor: '#10b981',
+        fillOpacity: 0.12,
+        dashArray: '4, 6'
+      }).addTo(map);
+
+      const homeIcon = L.divIcon({
+        className: 'home-icon-wrap',
+        html: `<div class="home-marker"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>`,
+        iconSize: [38, 38],
+        iconAnchor: [19, 19]
+      });
+
+      const homeMarker = L.marker([defaultLat, defaultLon], { icon: homeIcon }).addTo(map);
+      homeMarker.bindTooltip('Home Base', { permanent: false, direction: 'top', className: 'custom-tooltip' });
+
+      document.getElementById('coordsLabel').innerHTML = `Home: <b>${defaultLat.toFixed(3)}°, ${defaultLon.toFixed(3)}°</b>`;
+
+      const entityMarkers = new Map();
+      let lastPluginId = null;
+
+      function getInitials(name) {
+        if (!name) return '?';
+        const parts = name.trim().split(/\s+/);
+        if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+        return name.slice(0, 2).toUpperCase();
+      }
+
+      function updatePeopleStrip(entities) {
+        const strip = document.getElementById('peopleStrip');
+        if (!entities || !entities.length) {
+          strip.innerHTML = `
+            <div class="person-chip">
+              <div class="person-avatar-mini">⌂</div>
+              <div class="person-info">
+                <span class="person-name">Home Base</span>
+                <span class="person-state home">Monitoring</span>
+              </div>
+            </div>`;
+          return;
+        }
+
+        strip.innerHTML = '';
+        for (const e of entities) {
+          const isHome = (e.state || '').toLowerCase() === 'home';
+          const isAway = (e.state || '').toLowerCase() === 'not_home' || (e.state || '').toLowerCase() === 'away';
+          const stateClass = isHome ? 'home' : (isAway ? 'away' : 'zone');
+          const stateLabel = isHome ? 'Home' : (isAway ? 'Away' : (e.state || 'Unknown'));
+          const battery = e.battery != null ? ` · 🔋${e.battery}%` : '';
+
+          const chip = document.createElement('div');
+          chip.className = 'person-chip';
+          chip.innerHTML = `
+            <div class="person-avatar-mini" ${e.picture ? `style="background-image:url('${e.picture}')"` : ''}>
+              ${e.picture ? '' : getInitials(e.name)}
+            </div>
+            <div class="person-info">
+              <span class="person-name">${e.name || e.id}</span>
+              <span class="person-state ${stateClass}">${stateLabel}${battery}</span>
+            </div>
+          `;
+          strip.appendChild(chip);
+        }
+      }
+
+      function updateMarkers(entities) {
+        const activeIds = new Set();
+        const boundsPoints = [[defaultLat, defaultLon]];
+
+        for (const e of entities) {
+          if (typeof e.latitude !== 'number' || typeof e.longitude !== 'number') continue;
+
+          activeIds.add(e.id);
+          const pos = [e.latitude, e.longitude];
+          boundsPoints.push(pos);
+
+          const isHome = (e.state || '').toLowerCase() === 'home';
+          const isAway = (e.state || '').toLowerCase() === 'not_home' || (e.state || '').toLowerCase() === 'away';
+          const styleClass = isHome ? '' : (isAway ? 'away' : 'zone');
+
+          let markerEntry = entityMarkers.get(e.id);
+          if (!markerEntry) {
+            const icon = L.divIcon({
+              className: 'person-icon-wrap',
+              html: `
+                <div class="person-marker ${styleClass}" ${e.picture ? `style="background-image:url('${e.picture}')"` : ''}>
+                  ${e.picture ? '' : getInitials(e.name)}
+                  <span class="marker-badge"></span>
+                </div>`,
+              iconSize: [42, 42],
+              iconAnchor: [21, 21]
+            });
+
+            const marker = L.marker(pos, { icon }).addTo(map);
+            markerEntry = { marker, icon };
+            entityMarkers.set(e.id, markerEntry);
+          } else {
+            markerEntry.marker.setLatLng(pos);
+            const iconHtml = `
+              <div class="person-marker ${styleClass}" ${e.picture ? `style="background-image:url('${e.picture}')"` : ''}>
+                ${e.picture ? '' : getInitials(e.name)}
+                <span class="marker-badge"></span>
+              </div>`;
+            markerEntry.marker.setIcon(L.divIcon({
+              className: 'person-icon-wrap',
+              html: iconHtml,
+              iconSize: [42, 42],
+              iconAnchor: [21, 21]
+            }));
+          }
+
+          const battery = e.battery != null ? `<br>Battery: ${e.battery}%` : '';
+          markerEntry.marker.bindTooltip(`<b>${e.name || e.id}</b><br>State: ${e.state || 'Unknown'}${battery}`, {
+            direction: 'top',
+            className: 'custom-tooltip'
+          });
+        }
+
+        // Clean up markers that are no longer tracked
+        for (const [id, entry] of entityMarkers.entries()) {
+          if (!activeIds.has(id)) {
+            map.removeLayer(entry.marker);
+            entityMarkers.delete(id);
+          }
+        }
+
+        // Fit map bounds smoothly if multiple points exist
+        if (boundsPoints.length > 1) {
+          map.fitBounds(L.latLngBounds(boundsPoints).pad(0.2), { animate: true, maxZoom: 16 });
+        }
+      }
+
+      async function fetchHomeAssistantData() {
+        try {
+          // Check for configured Home Assistant plugin
+          if (!lastPluginId) {
+            const pluginsRes = await fetch('/api/plugins', { cache: 'no-store' });
+            if (pluginsRes.ok) {
+              const list = await pluginsRes.json();
+              const ha = (list.plugins || []).find(p => p.type === 'homeassistant' && p.enabled);
+              if (ha) lastPluginId = ha.id;
+            }
+          }
+
+          if (lastPluginId) {
+            const dataRes = await fetch('/api/plugin-data/' + encodeURIComponent(lastPluginId), { cache: 'no-store' });
+            if (dataRes.ok) {
+              const result = await dataRes.json();
+              if (result.connected && result.data && Array.isArray(result.data.entities)) {
+                const entities = result.data.entities;
+                document.getElementById('statusDot').className = 'status-dot';
+                document.getElementById('statusTag').textContent = 'HA Connected';
+                document.getElementById('updatedLabel').textContent = `Updated ${new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date())}`;
+
+                updatePeopleStrip(entities);
+                updateMarkers(entities);
+                return;
+              }
+            }
+          }
+
+          // Fallback if plugin is not connected yet
+          document.getElementById('statusDot').className = 'status-dot standby';
+          document.getElementById('statusTag').textContent = 'Home Base';
+          document.getElementById('updatedLabel').textContent = 'Connect Home Assistant in Studio Plugins';
+          updatePeopleStrip([]);
+        } catch (err) {
+          console.warn('HA Map data fetch:', err);
+          document.getElementById('statusDot').className = 'status-dot standby';
+          document.getElementById('updatedLabel').textContent = 'Standing by';
+        }
+      }
+
+      fetchHomeAssistantData();
+      setInterval(fetchHomeAssistantData, 15000);
+    })();
+  </script>
+</body>
+</html>

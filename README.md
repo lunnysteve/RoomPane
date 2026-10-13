@@ -18,7 +18,7 @@ Roompane turns a Raspberry Pi and a small screen into a rotating dashboard for t
 
 ## Features
 
-- **Ready-made pages.** These include clock, weather, humidity, moon phase and sunrise, forecast, countdown, the ISS tracker and NASA's picture of the day. They're lightweight enough for a Raspberry Pi 2.
+- **Ready-made pages.** These include clock, weather, humidity, moon phase and sunrise, forecast, countdown, the ISS tracker, NASA's picture of the day and a Home Assistant map. They're lightweight enough for a Raspberry Pi 2.
 - **Visual page designer.** Drag clock, weather, text, image, icon, video and plugin blocks onto an 800 × 480 canvas. Choose colours, bundled or uploaded fonts and simple animations.
 - **HTML editor.** Edit any page's HTML, CSS and JavaScript and preview a draft before you save it.
 - **Multiple screens.** One server can drive several displays. Each screen has its own playlist and its own URL.

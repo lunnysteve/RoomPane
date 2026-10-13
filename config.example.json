@@ -57,6 +57,16 @@
       "schedule": {
         "enabled": false
       }
+    },
+    {
+      "id": "p_three_map",
+      "name": "Home Assistant Map",
+      "url": "map.html",
+      "time": 30,
+      "active": true,
+      "schedule": {
+        "enabled": false
+      }
     }
   ]
 }
