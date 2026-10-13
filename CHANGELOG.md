@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.6
+
+- Add Home Assistant Map preset page (`map.html`) with dark Leaflet map, entity location tracking, and status HUD.
+- Support location coordinates, zones, pictures, and battery attributes in the Home Assistant plugin.
+
 ## 1.3.5
 
 - Introduce Roompane branding across Studio, Android TV, Pi launcher, documentation and release presentation.
