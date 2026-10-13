@@ -422,10 +422,25 @@
 
       function updateMarkers(entities) {
         const activeIds = new Set();
-        const boundsPoints = [[defaultLat, defaultLon]];
+        let homePos = [defaultLat, defaultLon];
+
+        // Check if Home Assistant provides zone.home
+        const homeZone = entities.find(e => e.id === 'zone.home' && typeof e.latitude === 'number');
+        if (homeZone) {
+          homePos = [homeZone.latitude, homeZone.longitude];
+          homeMarker.setLatLng(homePos);
+          if (homeZoneCircle) {
+            homeZoneCircle.setLatLng(homePos);
+            if (typeof homeZone.radius === 'number' && homeZone.radius > 0) homeZoneCircle.setRadius(homeZone.radius);
+          }
+          document.getElementById('coordsLabel').innerHTML = `Home: <b>${homeZone.latitude.toFixed(3)}°, ${homeZone.longitude.toFixed(3)}°</b>`;
+        }
+
+        const boundsPoints = [homePos];
 
         for (const e of entities) {
           if (typeof e.latitude !== 'number' || typeof e.longitude !== 'number') continue;
+          if (e.id === 'zone.home') continue; // Handled by Home Base marker and zone circle
 
           activeIds.add(e.id);
           const pos = [e.latitude, e.longitude];
