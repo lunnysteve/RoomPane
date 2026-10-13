@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="INSTALL.md">Install</a> ·
-  <a href="https://github.com/lunnysteve/home-display/releases">Download</a> ·
+  <a href="https://github.com/lunnysteve/RoomPane/releases">Download</a> ·
   <a href="PLUGINS.md">Plugins</a> ·
   <a href="android-tv/README.md">Android TV</a> ·
   <a href="CHANGELOG.md">Changelog</a>
@@ -38,7 +38,7 @@ Then, on the Pi:
 
 ```bash
 sudo apt update && sudo apt install -y git
-git clone https://github.com/lunnysteve/home-display.git
+git clone https://github.com/lunnysteve/RoomPane.git
 cd home-display
 sudo bash install.sh
 sudo reboot
@@ -92,7 +92,7 @@ To write your own plugin, see the [plugin guide](PLUGINS.md) and the [power-mete
 The app checks for newer APKs when opened and shows a download prompt. Its
 settings screen also has a manual **Check for app updates** button.
 
-1. Download `home-display-tv-vX.Y.Z.apk` from [Releases](https://github.com/lunnysteve/home-display/releases) and sideload it onto the TV.
+1. Download `home-display-tv-vX.Y.Z.apk` from [Releases](https://github.com/lunnysteve/RoomPane/releases) and sideload it onto the TV.
 2. Open **Roompane**, enter your server URL and pick a screen.
 3. Optionally, choose Roompane as the TV's screensaver.
 

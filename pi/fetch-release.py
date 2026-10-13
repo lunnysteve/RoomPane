@@ -10,7 +10,8 @@ APP=Path('/opt/home-display/app')
 NODE=Path('/opt/home-display/node/bin')
 UPDATES=Path('/opt/home-display/updates')
 DATA=Path(os.environ.get('HOME_DISPLAY_DATA_DIR','/var/lib/home-display'))
-REPO=os.environ.get('HOME_DISPLAY_UPDATE_REPO','lunnysteve/home-display')
+REPO=os.environ.get('HOME_DISPLAY_UPDATE_REPO','lunnysteve/RoomPane')
+TRUSTED_PREFIXES=tuple({f'https://api.github.com/repos/{REPO}/','https://api.github.com/repos/lunnysteve/RoomPane/','https://api.github.com/repos/lunnysteve/home-display/'})
 SYSTEM_FILES={
     'fetch-release.py':(Path('/usr/local/lib/home-display/fetch-release.py'),0o755),
     'home-display-control':(Path('/usr/local/sbin/home-display-control'),0o755),
@@ -34,7 +35,8 @@ def status(state,message,version=None):
         json.dump({'state':state,'message':message,'version':version,'updatedAt':time.time(),'log':INSTALL_LOG},handle)
     os.replace(temporary,target)
 def download(url,target=None,limit=150*1024*1024,asset=False):
-    if not url.startswith('https://api.github.com/repos/'+REPO+'/'): raise ValueError('Untrusted release URL')
+    prefixes=tuple({f'https://api.github.com/repos/{REPO}/',*TRUSTED_PREFIXES})
+    if not any(url.startswith(p) for p in prefixes): raise ValueError('Untrusted release URL')
     headers={'User-Agent':'home-display-updater','Accept':'application/octet-stream' if asset else 'application/vnd.github+json'}
     with opener.open(Request(url,headers=headers),timeout=30) as response:
         chunks=[];size=0
