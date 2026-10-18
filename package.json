@@ -1,6 +1,6 @@
 {
   "name": "roompane",
-  "version": "1.3.9",
+  "version": "1.3.10",
   "description": "Your home, at a glance. A customizable Raspberry Pi and Android TV dashboard.",
   "main": "server.js",
   "scripts": {

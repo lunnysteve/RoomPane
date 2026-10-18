@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.10
+
+- Stop the Map page triggering a browser sign-in box on the kiosk by reading Home Assistant from the public plugin status.
+
 ## 1.3.9
 
 - Detect the login box from the active seat session so a lingering kiosk session no longer hides it.

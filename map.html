@@ -506,10 +506,11 @@
         try {
           // Check for configured Home Assistant plugin
           if (!lastPluginId) {
-            const pluginsRes = await fetch('/api/plugins', { cache: 'no-store' });
+            // /api/plugins is admin-only; a 401 there makes the kiosk browser show a sign-in box.
+            const pluginsRes = await fetch('/api/plugin-status', { cache: 'no-store' });
             if (pluginsRes.ok) {
               const list = await pluginsRes.json();
-              const ha = (list.plugins || []).find(p => p.type === 'homeassistant' && p.enabled);
+              const ha = (list.statuses || []).find(p => p.type === 'homeassistant' && p.message !== 'Plugin disabled');
               if (ha) lastPluginId = ha.id;
             }
           }
