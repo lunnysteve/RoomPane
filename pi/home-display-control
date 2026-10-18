@@ -8,7 +8,9 @@ case "${1:-}" in
   ensure_kiosk)
     [ -f /etc/lightdm/lightdm.conf.d/90-home-display.conf ] || exit 0
     /usr/bin/systemctl is-active --quiet lightdm.service || exit 0
-    /usr/bin/loginctl list-sessions --no-legend | grep -qw display-kiosk && exit 0
+    # A dead kiosk session can linger in the list, so check who owns the screen right now.
+    active=$(/usr/bin/loginctl show-seat seat0 -p ActiveSession --value 2>/dev/null || true)
+    [ -n "$active" ] && [ "$(/usr/bin/loginctl show-session "$active" -p Name --value 2>/dev/null)" = display-kiosk ] && exit 0
     exec /usr/bin/systemctl restart lightdm.service ;;
   *) echo 'Invalid display action.' >&2; exit 2 ;;
 esac

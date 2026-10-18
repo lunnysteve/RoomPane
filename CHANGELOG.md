@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.9
+
+- Detect the login box from the active seat session so a lingering kiosk session no longer hides it.
+
 ## 1.3.8
 
 - Restart the kiosk automatically when the Pi screen falls back to the LightDM login box.
