@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.8
+
+- Restart the kiosk automatically when the Pi screen falls back to the LightDM login box.
+- Auto-center the map home base on Home Assistant zone.home coordinates.
+
 ## 1.3.7
 
 - Switch map tiles to free OpenStreetMap with dark theme filter, removing CARTO API key requirement and watermark banner.

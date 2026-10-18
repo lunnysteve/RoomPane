@@ -139,6 +139,8 @@ app.post('/api/pi/control', (req, res) => {
     res.json({ success: true, action });
   });
 });
+// Bring the kiosk back if the screen has fallen to the LightDM login box.
+if (process.env.HOME_DISPLAY_CONTROL === 'local') setInterval(() => execFile('/usr/bin/sudo', ['-n', '/usr/local/sbin/home-display-control', 'ensure_kiosk'], { timeout: 30000 }, () => {}), 120000).unref();
 function freeName(name) {
   const extension = path.extname(name), base = name.slice(0, -extension.length || undefined);
   let candidate = name;

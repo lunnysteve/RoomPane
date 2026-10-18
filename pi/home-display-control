@@ -3,6 +3,12 @@ set -eu
 case "${1:-}" in
   restart_browser) exec /usr/bin/systemctl restart lightdm.service ;;
   reboot_pi) exec /usr/bin/systemctl reboot ;;
-    install_update) exec /usr/bin/systemctl start --no-block home-display-update.service ;;
+  install_update) exec /usr/bin/systemctl start --no-block home-display-update.service ;;
+  # LightDM only autologins at start; if the kiosk session ends it leaves the greeter up.
+  ensure_kiosk)
+    [ -f /etc/lightdm/lightdm.conf.d/90-home-display.conf ] || exit 0
+    /usr/bin/systemctl is-active --quiet lightdm.service || exit 0
+    /usr/bin/loginctl list-sessions --no-legend | grep -qw display-kiosk && exit 0
+    exec /usr/bin/systemctl restart lightdm.service ;;
   *) echo 'Invalid display action.' >&2; exit 2 ;;
 esac
